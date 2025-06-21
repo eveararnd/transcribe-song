@@ -51,8 +51,8 @@ describe('API Service', () => {
   describe('getFiles', () => {
     test('fetches files with default parameters', async () => {
       const mockFiles = [
-        { id: '1', original_filename: 'file1.mp3' },
-        { id: '2', original_filename: 'file2.mp3' }
+        { id: '1', filename: 'file1.mp3' },
+        { id: '2', filename: 'file2.mp3' }
       ];
       mockedAxios.get = vi.fn().mockResolvedValueOnce({ 
         data: { 
@@ -161,7 +161,7 @@ describe('API Service', () => {
     test('searches for similar content', async () => {
       const mockResults = {
         results: [
-          { file: { id: '1', original_filename: 'similar.mp3' }, transcriptions: [], lyrics: [] }
+          { file: { id: '1', filename: 'similar.mp3' }, transcriptions: [], lyrics: [] }
         ]
       };
       mockedAxios.post = vi.fn().mockResolvedValueOnce({ data: mockResults });

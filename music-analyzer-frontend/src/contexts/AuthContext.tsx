@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext, useCallback, ReactNode } from 'react';
+import { cookieUtils } from '../utils/cookieUtils';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   username: string | null;
   password: string | null;
-  login: (username: string, password: string) => void;
+  isUsingCookie: boolean;
+  login: (username: string, password: string, rememberMe?: boolean) => void;
   logout: () => void;
   getAuthHeader: () => string;
 }
@@ -27,12 +29,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [password, setPassword] = useState<string | null>(null);
+  const [isUsingCookie, setIsUsingCookie] = useState(false);
 
-  const login = useCallback((username: string, password: string) => {
+  const login = useCallback((username: string, password: string, rememberMe: boolean = true) => {
     setUsername(username);
     setPassword(password);
     setIsAuthenticated(true);
-    // Store in sessionStorage for persistence during session
+    setIsUsingCookie(rememberMe);
+    // Store in cookie for persistence (2 weeks) if rememberMe is true
+    if (rememberMe) {
+      cookieUtils.setAuthCookie(username, password);
+    }
+    // Always keep in sessionStorage for current session
     sessionStorage.setItem('auth', JSON.stringify({ username, password }));
   }, []);
 
@@ -40,6 +48,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUsername(null);
     setPassword(null);
     setIsAuthenticated(false);
+    setIsUsingCookie(false);
+    // Remove from both cookie and sessionStorage
+    cookieUtils.removeAuthCookie();
     sessionStorage.removeItem('auth');
   }, []);
 
@@ -50,14 +61,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return '';
   }, [username, password]);
 
-  // Check for existing auth on mount
+  // Check for existing auth on mount (first try cookie, then sessionStorage)
   React.useEffect(() => {
+    // First try to get auth from cookie
+    const cookieAuth = cookieUtils.getAuthCookie();
+    if (cookieAuth) {
+      setUsername(cookieAuth.username);
+      setPassword(cookieAuth.password);
+      setIsAuthenticated(true);
+      setIsUsingCookie(true);
+      // Also sync to sessionStorage
+      sessionStorage.setItem('auth', JSON.stringify(cookieAuth));
+      return;
+    }
+    
+    // Fall back to sessionStorage for backward compatibility
     const authData = sessionStorage.getItem('auth');
     if (authData) {
       const { username, password } = JSON.parse(authData);
-      login(username, password);
+      setUsername(username);
+      setPassword(password);
+      setIsAuthenticated(true);
+      setIsUsingCookie(false);
     }
-  }, [login]);
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -65,6 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         isAuthenticated,
         username,
         password,
+        isUsingCookie,
         login,
         logout,
         getAuthHeader,

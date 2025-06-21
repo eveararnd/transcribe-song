@@ -1,15 +1,13 @@
 export interface MusicFile {
   id: string;
-  original_filename: string;
-  file_format: string;
+  filename: string;
+  artist: string;
+  title: string;
+  genre: string;
   duration: number;
-  sample_rate: number;
-  channels: number;
-  bit_depth: number;
   file_size: number;
-  uploaded_at: string;
-  genre?: string;
-  metadata?: Record<string, any>;
+  transcribed: boolean;
+  created_at: string;
 }
 
 export interface Transcription {

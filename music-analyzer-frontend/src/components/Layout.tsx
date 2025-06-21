@@ -19,6 +19,10 @@ import {
   DialogContent,
   TextField,
   DialogActions,
+  Tooltip,
+  Chip,
+  FormControlLabel,
+  Checkbox,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -27,6 +31,8 @@ import {
   Search as SearchIcon,
   Logout as LogoutIcon,
   MusicNote as MusicIcon,
+  Lock as LockIcon,
+  LockOpen as LockOpenIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -37,19 +43,21 @@ const Layout: React.FC = () => {
   const [loginOpen, setLoginOpen] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated, login, logout, username: currentUser } = useAuth();
+  const { isAuthenticated, login, logout, username: currentUser, isUsingCookie } = useAuth();
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   const handleLogin = () => {
-    login(username, password);
+    login(username, password, rememberMe);
     setLoginOpen(false);
     setUsername('');
     setPassword('');
+    setRememberMe(true);
   };
 
   const menuItems = [
@@ -112,12 +120,26 @@ const Layout: React.FC = () => {
           </Typography>
           {isAuthenticated && (
             <>
-              <Typography variant="body2" sx={{ mr: 2 }}>
-                {currentUser}
-              </Typography>
-              <IconButton color="inherit" onClick={logout}>
-                <LogoutIcon />
-              </IconButton>
+              <Tooltip title={isUsingCookie ? 'Logged in with saved credentials (2 weeks)' : 'Session login only'}>
+                <Chip
+                  icon={isUsingCookie ? <LockIcon /> : <LockOpenIcon />}
+                  label={currentUser}
+                  sx={{ mr: 2, color: 'white', borderColor: 'white' }}
+                  variant="outlined"
+                />
+              </Tooltip>
+              <Tooltip title="Logout">
+                <IconButton
+                  color="inherit"
+                  onClick={() => {
+                    if (window.confirm('Are you sure you want to logout?')) {
+                      logout();
+                    }
+                  }}
+                >
+                  <LogoutIcon />
+                </IconButton>
+              </Tooltip>
             </>
           )}
         </Toolbar>
@@ -163,7 +185,7 @@ const Layout: React.FC = () => {
         <Outlet />
       </Box>
 
-      <Dialog open={loginOpen} onClose={() => {}}>
+      <Dialog open={loginOpen} onClose={() => {}} maxWidth="xs" fullWidth>
         <DialogTitle>Login to Music Analyzer</DialogTitle>
         <DialogContent>
           <TextField
@@ -189,6 +211,17 @@ const Layout: React.FC = () => {
                 handleLogin();
               }
             }}
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                color="primary"
+              />
+            }
+            label="Remember me for 2 weeks"
+            sx={{ mt: 2 }}
           />
         </DialogContent>
         <DialogActions>

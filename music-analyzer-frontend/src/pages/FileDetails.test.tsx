@@ -59,16 +59,14 @@ describe('FileDetails Component', () => {
 
   const mockFile = {
     id: 'test-file-id',
-    original_filename: 'test_song.mp3',
-    file_format: 'mp3',
-    duration: 180.5,
-    sample_rate: 44100,
-    channels: 2,
-    bit_depth: 16,
-    file_size: 5242880,
+    filename: 'test_song.mp3',
+    artist: 'Test Artist',
+    title: 'Test Song',
     genre: 'rock',
-    uploaded_at: '2024-01-01T12:00:00Z',
-    metadata: { artist: 'Test Artist', album: 'Test Album' }
+    duration: 180.5,
+    file_size: 5242880,
+    transcribed: false,
+    created_at: '2024-01-01T12:00:00Z'
   };
 
   const mockTranscriptions = [

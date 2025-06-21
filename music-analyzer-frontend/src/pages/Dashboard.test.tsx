@@ -49,29 +49,25 @@ describe('Dashboard Component', () => {
   const mockFiles = [
     {
       id: '1',
-      original_filename: 'song1.mp3',
-      file_format: 'mp3',
+      filename: 'song1.mp3',
+      artist: 'Artist 1',
+      title: 'Song 1',
+      genre: 'rock',
       duration: 180,
       file_size: 5242880,
-      genre: 'rock',
-      uploaded_at: '2024-01-01T12:00:00Z',
-      sample_rate: 44100,
-      channels: 2,
-      bit_depth: 16,
-      metadata: {}
+      transcribed: false,
+      created_at: '2024-01-01T12:00:00Z'
     },
     {
       id: '2',
-      original_filename: 'song2.flac',
-      file_format: 'flac',
+      filename: 'song2.flac',
+      artist: 'Artist 2',
+      title: 'Song 2',
+      genre: 'jazz',
       duration: 240,
       file_size: 10485760,
-      genre: 'jazz',
-      uploaded_at: '2024-01-02T12:00:00Z',
-      sample_rate: 48000,
-      channels: 2,
-      bit_depth: 24,
-      metadata: {}
+      transcribed: true,
+      created_at: '2024-01-02T12:00:00Z'
     }
   ];
 

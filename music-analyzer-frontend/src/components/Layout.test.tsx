@@ -36,6 +36,8 @@ describe('Layout Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     sessionStorage.clear();
+    // Mock window.confirm for logout functionality
+    window.confirm = vi.fn(() => true);
   });
 
   test('renders layout with navigation', () => {
@@ -128,9 +130,28 @@ describe('Layout Component', () => {
       fireEvent.click(logoutButton);
     }
 
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to logout?');
+
     await waitFor(() => {
       expect(screen.getByText('Login to Music Analyzer')).toBeInTheDocument();
     });
+  });
+
+  test('cancels logout when user declines', async () => {
+    window.confirm = vi.fn(() => false);
+    sessionStorage.setItem('auth', JSON.stringify({ username: 'testuser', password: 'testpass' }));
+    
+    renderWithProviders(<Layout />);
+
+    const logoutButton = screen.getByTestId('LogoutIcon').closest('button');
+    if (logoutButton) {
+      fireEvent.click(logoutButton);
+    }
+
+    expect(window.confirm).toHaveBeenCalledWith('Are you sure you want to logout?');
+    
+    // User should still be logged in
+    expect(screen.getByText('testuser')).toBeInTheDocument();
   });
 
   test('mobile drawer toggle works', () => {

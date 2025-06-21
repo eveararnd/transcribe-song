@@ -1205,6 +1205,143 @@ async def get_storage_stats(
         logger.error(f"Error getting storage stats: {e}")
         raise HTTPException(500, f"Failed to get storage stats: {str(e)}")
 
+# Get single file endpoint
+@app.get("/api/v2/files/{file_id}")
+async def get_file(
+    file_id: str,
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """Get details for a single file"""
+    try:
+        # Get file with all relationships
+        from sqlalchemy.orm import selectinload
+        query = (
+            select(MusicFile)
+            .options(
+                selectinload(MusicFile.transcriptions),
+                selectinload(MusicFile.lyrics)
+            )
+            .where(MusicFile.id == file_id)
+        )
+        result = await db.execute(query)
+        file = result.scalar_one_or_none()
+        
+        if not file:
+            raise HTTPException(404, f"File not found: {file_id}")
+        
+        # Build response
+        response = {
+            "id": str(file.id),
+            "filename": file.original_filename,
+            "storage_path": file.storage_path,
+            "file_hash": file.file_hash,
+            "file_size": file.file_size,
+            "duration": file.duration,
+            "sample_rate": file.sample_rate,
+            "channels": file.channels,
+            "codec": file.codec,
+            "genre": file.genre,
+            "uploaded_at": file.uploaded_at.isoformat() if file.uploaded_at else None,
+            "metadata": file.file_metadata or {},
+            "transcriptions": [
+                {
+                    "id": str(t.id),
+                    "text": t.transcription_text,
+                    "confidence": t.confidence,
+                    "processing_time": t.processing_time,
+                    "model_version": t.model_version,
+                    "created_at": t.created_at.isoformat() if t.created_at else None,
+                    "segments": t.segments or []
+                }
+                for t in file.transcriptions
+            ] if file.transcriptions else [],
+            "lyrics": [
+                {
+                    "id": str(l.id),
+                    "source": l.source,
+                    "lyrics_text": l.lyrics_text,
+                    "confidence": l.confidence,
+                    "metadata": l.metadata or {},
+                    "created_at": l.created_at.isoformat() if l.created_at else None
+                }
+                for l in file.lyrics
+            ] if file.lyrics else []
+        }
+        
+        return response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting file {file_id}: {e}")
+        raise HTTPException(500, f"Failed to get file details: {str(e)}")
+
+# Delete file endpoint
+@app.delete("/api/v2/files/{file_id}")
+async def delete_file(
+    file_id: str,
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """Delete a music file and all associated data"""
+    try:
+        # Get the file first
+        result = await db.execute(select(MusicFile).where(MusicFile.id == file_id))
+        file = result.scalar_one_or_none()
+        
+        if not file:
+            raise HTTPException(404, f"File not found: {file_id}")
+        
+        # Delete from MinIO/storage
+        try:
+            if file.storage_path:
+                # Try to delete from MinIO
+                if minio_client:
+                    bucket_name = MINIO_CONFIG["bucket_name"]
+                    object_name = file.storage_path.replace(f"{bucket_name}/", "")
+                    minio_client.remove_object(bucket_name, object_name)
+                    logger.info(f"Deleted from MinIO: {object_name}")
+                
+                # Also try to delete from local storage if it exists
+                local_paths = [
+                    STORAGE_PATHS["original"] / file.storage_path,
+                    STORAGE_PATHS["converted"] / file.storage_path.replace(".mp3", ".wav"),
+                ]
+                for path in local_paths:
+                    if path.exists():
+                        path.unlink()
+                        logger.info(f"Deleted local file: {path}")
+        except Exception as e:
+            logger.warning(f"Failed to delete storage files: {e}")
+            # Continue with database deletion even if storage deletion fails
+        
+        # Delete from FAISS index if exists
+        if faiss_manager and file.transcriptions:
+            for transcription in file.transcriptions:
+                try:
+                    await asyncio.to_thread(faiss_manager.remove_from_index, str(transcription.id))
+                except Exception as e:
+                    logger.warning(f"Failed to remove from FAISS: {e}")
+        
+        # Delete from database (cascades to transcriptions, lyrics, etc.)
+        await db.delete(file)
+        await db.commit()
+        
+        logger.info(f"Deleted file {file_id}: {file.original_filename}")
+        
+        return {
+            "message": f"File '{file.original_filename}' deleted successfully",
+            "file_id": file_id
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting file {file_id}: {e}")
+        await db.rollback()
+        raise HTTPException(500, f"Failed to delete file: {str(e)}")
+
 # Catch-all route for React Router - must be last!
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def serve_spa(full_path: str):

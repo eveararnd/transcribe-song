@@ -1,10 +1,18 @@
 import axios from 'axios';
 import { MusicFile, Transcription, Lyrics, SearchResult, UploadResponse, TranscriptionRequest, StorageStats } from '../types';
+import { cookieUtils } from '../utils/cookieUtils';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || '/api/v2';
 
 class ApiService {
   private getAuthHeader(): string {
+    // First try to get auth from cookie
+    const cookieHeader = cookieUtils.getAuthHeaderFromCookie();
+    if (cookieHeader) {
+      return cookieHeader;
+    }
+    
+    // Fall back to sessionStorage for backward compatibility
     const auth = sessionStorage.getItem('auth');
     if (auth) {
       const { username, password } = JSON.parse(auth);

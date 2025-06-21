@@ -40,16 +40,14 @@ describe('SearchPage Component', () => {
     {
       file: {
         id: '1',
-        original_filename: 'result1.mp3',
-        file_format: 'mp3',
-        duration: 180,
+        filename: 'result1.mp3',
+        artist: 'Artist 1',
+        title: 'Result Song 1',
         genre: 'rock',
-        sample_rate: 44100,
-        channels: 2,
-        bit_depth: 16,
+        duration: 180,
         file_size: 5242880,
-        uploaded_at: '2024-01-01T12:00:00Z',
-        metadata: {}
+        transcribed: true,
+        created_at: '2024-01-01T12:00:00Z'
       },
       transcriptions: [{
         id: 'trans-1',

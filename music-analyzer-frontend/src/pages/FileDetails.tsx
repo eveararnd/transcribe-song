@@ -111,7 +111,7 @@ const FileDetails: React.FC = () => {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `${file?.original_filename || 'export'}.${format}`;
+      a.download = `${file?.filename || 'export'}.${format}`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -151,9 +151,9 @@ const FileDetails: React.FC = () => {
       <Box display="flex" alignItems="center" mb={3}>
         <AudioIcon sx={{ fontSize: 40, mr: 2 }} />
         <Box flex={1}>
-          <Typography variant="h4">{file.original_filename}</Typography>
+          <Typography variant="h4">{file.filename}</Typography>
           <Typography variant="body2" color="textSecondary">
-            Uploaded {format(parseDate(file.uploaded_at), 'PPpp')}
+            Uploaded {format(parseDate(file.created_at), 'PPpp')}
           </Typography>
         </Box>
         <Button
@@ -179,7 +179,7 @@ const FileDetails: React.FC = () => {
                     Format
                   </Typography>
                   <Box>
-                    <Chip label={file.file_format?.toUpperCase()} size="small" />
+                    <Chip label={file.filename.split('.').pop()?.toUpperCase() || 'UNKNOWN'} size="small" />
                   </Box>
                 </Grid>
                 <Grid item xs={6}>
@@ -196,17 +196,15 @@ const FileDetails: React.FC = () => {
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="textSecondary">
-                    Sample Rate
+                    Artist
                   </Typography>
-                  <Typography variant="body1">{file.sample_rate} Hz</Typography>
+                  <Typography variant="body1">{file.artist || 'Unknown'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="textSecondary">
-                    Channels
+                    Title
                   </Typography>
-                  <Typography variant="body1">
-                    {file.channels === 1 ? 'Mono' : file.channels === 2 ? 'Stereo' : `${file.channels} channels`}
-                  </Typography>
+                  <Typography variant="body1">{file.title || 'Unknown'}</Typography>
                 </Grid>
                 <Grid item xs={6}>
                   <Typography variant="body2" color="textSecondary">
@@ -320,7 +318,17 @@ const FileDetails: React.FC = () => {
 
         <TabPanel value={tabValue} index={2}>
           <pre style={{ overflow: 'auto' }}>
-            {JSON.stringify(file.metadata || {}, null, 2)}
+            {JSON.stringify({
+              id: file.id,
+              filename: file.filename,
+              artist: file.artist,
+              title: file.title,
+              genre: file.genre,
+              duration: file.duration,
+              file_size: file.file_size,
+              transcribed: file.transcribed,
+              created_at: file.created_at
+            }, null, 2)}
           </pre>
         </TabPanel>
       </Paper>

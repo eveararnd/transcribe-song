@@ -140,7 +140,7 @@ const SearchPage: React.FC = () => {
                     <Box display="flex" alignItems="center" mb={1}>
                       <AudioIcon sx={{ mr: 1 }} />
                       <Typography variant="h6" component="div" sx={{ flex: 1 }}>
-                        {result.file.original_filename}
+                        {result.file.filename}
                       </Typography>
                       {result.similarity_score && (
                         <Chip
@@ -152,7 +152,7 @@ const SearchPage: React.FC = () => {
                     </Box>
                     
                     <Box display="flex" gap={1} mb={2}>
-                      <Chip label={result.file.file_format?.toUpperCase()} size="small" />
+                      <Chip label={result.file.filename.split('.').pop()?.toUpperCase() || 'UNKNOWN'} size="small" />
                       <Chip label={formatDuration(result.file.duration)} size="small" />
                       {result.file.genre && <Chip label={result.file.genre} size="small" />}
                     </Box>

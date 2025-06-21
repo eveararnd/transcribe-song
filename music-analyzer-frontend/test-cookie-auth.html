@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cookie Auth Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3/dist/js.cookie.min.js"></script>
+</head>
+<body>
+    <h1>Cookie Authentication Test</h1>
+    
+    <div>
+        <h2>Set Auth Cookie</h2>
+        <input type="text" id="username" placeholder="Username" value="parakeet">
+        <input type="password" id="password" placeholder="Password" value="Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=">
+        <button onclick="setCookie()">Set Cookie</button>
+    </div>
+    
+    <div>
+        <h2>Cookie Status</h2>
+        <pre id="status"></pre>
+    </div>
+    
+    <div>
+        <button onclick="getCookie()">Get Cookie</button>
+        <button onclick="removeCookie()">Remove Cookie</button>
+    </div>
+
+    <script>
+        const AUTH_COOKIE_NAME = 'music_analyzer_auth';
+        
+        function setCookie() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const authData = { username, password };
+            const encodedData = btoa(JSON.stringify(authData));
+            
+            Cookies.set(AUTH_COOKIE_NAME, encodedData, {
+                expires: 14,
+                secure: window.location.protocol === 'https:',
+                sameSite: 'strict'
+            });
+            
+            updateStatus('Cookie set successfully!');
+            getCookie();
+        }
+        
+        function getCookie() {
+            const encodedData = Cookies.get(AUTH_COOKIE_NAME);
+            if (!encodedData) {
+                updateStatus('No cookie found');
+                return;
+            }
+            
+            try {
+                const decodedData = atob(encodedData);
+                const authData = JSON.parse(decodedData);
+                updateStatus(`Cookie found:\nUsername: ${authData.username}\nAuth Header: Basic ${btoa(authData.username + ':' + authData.password)}`);
+            } catch (error) {
+                updateStatus('Error decoding cookie: ' + error.message);
+            }
+        }
+        
+        function removeCookie() {
+            Cookies.remove(AUTH_COOKIE_NAME);
+            updateStatus('Cookie removed');
+        }
+        
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // Check on load
+        getCookie();
+    </script>
+
+    <!-- Copyright Footer -->
+    <footer style="position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; color: #888; text-align: center; padding: 1rem 0; font-size: 0.875rem; border-top: 1px solid #333; z-index: 1000;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+            © 2025 David Gornshtein / Eveara Ltd. All rights reserved.
+        </div>
+    </footer>
+
+    <style>
+        body {
+            padding: 20px;
+            padding-bottom: 80px;
+            font-family: Arial, sans-serif;
+        }
+        div {
+            margin: 20px 0;
+        }
+        input {
+            margin: 5px;
+            padding: 5px;
+            width: 200px;
+        }
+        button {
+            margin: 5px;
+            padding: 5px 10px;
+        }
+        pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</body>
+</html>
