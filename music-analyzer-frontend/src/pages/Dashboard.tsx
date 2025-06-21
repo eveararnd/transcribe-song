@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from 'react-query';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -16,6 +16,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  TableSortLabel,
   IconButton,
   Chip,
   Dialog,
@@ -26,6 +27,9 @@ import {
   Button,
   Tooltip,
   Snackbar,
+  Checkbox,
+  Toolbar,
+  alpha,
 } from '@mui/material';
 import { 
   Visibility as ViewIcon,
@@ -42,6 +46,13 @@ import { parseDate } from '../utils/dateUtils';
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  
+  // State for selected files
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
+  
+  // State for sorting
+  const [orderBy, setOrderBy] = useState<keyof MusicFile>('created_at');
+  const [order, setOrder] = useState<'asc' | 'desc'>('desc');
   
   // State for delete confirmation dialog
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; file: MusicFile | null }>({
@@ -68,14 +79,31 @@ const Dashboard: React.FC = () => {
 
   // Delete mutation
   const deleteMutation = useMutation(
-    (fileId: string) => api.deleteFile(fileId),
+    async (data: { fileId?: string; fileIds?: string[] }) => {
+      if (data.fileIds) {
+        return api.batchDeleteFiles(data.fileIds);
+      } else if (data.fileId) {
+        return api.deleteFile(data.fileId);
+      }
+      throw new Error('No file ID provided');
+    },
     {
-      onSuccess: () => {
-        setNotification({
-          open: true,
-          message: 'File deleted successfully',
-          severity: 'success',
-        });
+      onSuccess: (response, variables) => {
+        const isBatch = !!variables.fileIds;
+        if (isBatch) {
+          setNotification({
+            open: true,
+            message: `Deleted ${response.total_deleted} files successfully${response.total_failed > 0 ? `, ${response.total_failed} failed` : ''}`,
+            severity: response.total_failed > 0 ? 'warning' : 'success',
+          });
+          setSelectedFiles([]);
+        } else {
+          setNotification({
+            open: true,
+            message: 'File deleted successfully',
+            severity: 'success',
+          });
+        }
         // Refresh both files and stats
         refetchFiles();
         queryClient.invalidateQueries('storageStats');
@@ -83,7 +111,7 @@ const Dashboard: React.FC = () => {
       onError: (error: any) => {
         setNotification({
           open: true,
-          message: error.response?.data?.detail || 'Error deleting file',
+          message: error.response?.data?.detail || 'Error deleting file(s)',
           severity: 'error',
         });
       },
@@ -96,7 +124,11 @@ const Dashboard: React.FC = () => {
 
   const handleDeleteConfirm = () => {
     if (deleteDialog.file) {
-      deleteMutation.mutate(deleteDialog.file.id);
+      // Single file delete
+      deleteMutation.mutate({ fileId: deleteDialog.file.id });
+    } else if (selectedFiles.length > 0) {
+      // Batch delete
+      deleteMutation.mutate({ fileIds: selectedFiles });
     }
     setDeleteDialog({ open: false, file: null });
   };
@@ -118,6 +150,38 @@ const Dashboard: React.FC = () => {
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const handleRequestSort = (property: keyof MusicFile) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
+
+  const sortedFiles = useMemo(() => {
+    if (!files) return [];
+    
+    return [...files].sort((a, b) => {
+      let aValue = a[orderBy];
+      let bValue = b[orderBy];
+      
+      // Handle special cases
+      if (orderBy === 'created_at') {
+        aValue = new Date(aValue as string).getTime();
+        bValue = new Date(bValue as string).getTime();
+      }
+      
+      if (aValue === null || aValue === undefined) return 1;
+      if (bValue === null || bValue === undefined) return -1;
+      
+      if (aValue < bValue) {
+        return order === 'asc' ? -1 : 1;
+      }
+      if (aValue > bValue) {
+        return order === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+  }, [files, orderBy, order]);
 
   if (filesLoading || statsLoading) {
     return (
@@ -200,22 +264,159 @@ const Dashboard: React.FC = () => {
       <Typography variant="h5" gutterBottom>
         Recent Files
       </Typography>
+      
+      {selectedFiles.length > 0 && (
+        <Toolbar
+          sx={{
+            pl: { sm: 2 },
+            pr: { xs: 1, sm: 1 },
+            ...(selectedFiles.length > 0 && {
+              bgcolor: (theme) =>
+                alpha(theme.palette.primary.main, theme.palette.action.activatedOpacity),
+            }),
+            mb: 2,
+          }}
+        >
+          <Typography
+            sx={{ flex: '1 1 100%' }}
+            color="inherit"
+            variant="subtitle1"
+            component="div"
+          >
+            {selectedFiles.length} selected
+          </Typography>
+          
+          <Tooltip title="Delete selected">
+            <IconButton
+              onClick={() => {
+                setDeleteDialog({
+                  open: true,
+                  file: null, // Indicates batch delete
+                });
+              }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Tooltip>
+          
+          <Tooltip title="Export selected">
+            <IconButton
+              onClick={async () => {
+                try {
+                  const blob = await api.batchExportFiles(selectedFiles);
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `music_export_${new Date().toISOString().split('T')[0]}.tar.gz`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  setNotification({
+                    open: true,
+                    message: `Exported ${selectedFiles.length} files successfully`,
+                    severity: 'success',
+                  });
+                } catch (error) {
+                  setNotification({
+                    open: true,
+                    message: 'Failed to export files',
+                    severity: 'error',
+                  });
+                }
+              }}
+            >
+              <DownloadIcon />
+            </IconButton>
+          </Tooltip>
+        </Toolbar>
+      )}
+      
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <TableCell>File Name</TableCell>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedFiles.length > 0 && selectedFiles.length < (sortedFiles?.length || 0)}
+                  checked={sortedFiles?.length > 0 && selectedFiles.length === sortedFiles?.length}
+                  onChange={(event) => {
+                    if (event.target.checked) {
+                      setSelectedFiles(sortedFiles?.map(f => f.id) || []);
+                    } else {
+                      setSelectedFiles([]);
+                    }
+                  }}
+                />
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'filename'}
+                  direction={orderBy === 'filename' ? order : 'asc'}
+                  onClick={() => handleRequestSort('filename')}
+                >
+                  File Name
+                </TableSortLabel>
+              </TableCell>
               <TableCell>Format</TableCell>
-              <TableCell>Duration</TableCell>
-              <TableCell>Size</TableCell>
-              <TableCell>Genre</TableCell>
-              <TableCell>Uploaded</TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'duration'}
+                  direction={orderBy === 'duration' ? order : 'asc'}
+                  onClick={() => handleRequestSort('duration')}
+                >
+                  Duration
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'file_size'}
+                  direction={orderBy === 'file_size' ? order : 'asc'}
+                  onClick={() => handleRequestSort('file_size')}
+                >
+                  Size
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'genre'}
+                  direction={orderBy === 'genre' ? order : 'asc'}
+                  onClick={() => handleRequestSort('genre')}
+                >
+                  Genre
+                </TableSortLabel>
+              </TableCell>
+              <TableCell>
+                <TableSortLabel
+                  active={orderBy === 'created_at'}
+                  direction={orderBy === 'created_at' ? order : 'asc'}
+                  onClick={() => handleRequestSort('created_at')}
+                >
+                  Uploaded
+                </TableSortLabel>
+              </TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {files?.map((file: MusicFile) => (
-              <TableRow key={file.id}>
+            {sortedFiles?.map((file: MusicFile) => {
+              const isSelected = selectedFiles.includes(file.id);
+              return (
+              <TableRow 
+                key={file.id}
+                selected={isSelected}
+                hover
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => {
+                      if (event.target.checked) {
+                        setSelectedFiles([...selectedFiles, file.id]);
+                      } else {
+                        setSelectedFiles(selectedFiles.filter(id => id !== file.id));
+                      }
+                    }}
+                  />
+                </TableCell>
                 <TableCell>
                   <Box display="flex" alignItems="center">
                     <AudioIcon sx={{ mr: 1 }} />
@@ -271,12 +472,13 @@ const Dashboard: React.FC = () => {
                   </Tooltip>
                 </TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>
 
-      {(!files || files.length === 0) && (
+      {(!sortedFiles || sortedFiles.length === 0) && (
         <Box mt={4} textAlign="center">
           <Typography color="textSecondary">
             No files uploaded yet. Start by uploading a music file.
@@ -296,7 +498,10 @@ const Dashboard: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-dialog-description">
-            Are you sure you want to delete "{deleteDialog.file?.filename}"? This action cannot be undone.
+            {deleteDialog.file 
+              ? `Are you sure you want to delete "${deleteDialog.file.filename}"? This action cannot be undone.`
+              : `Are you sure you want to delete ${selectedFiles.length} selected files? This action cannot be undone.`
+            }
           </DialogContentText>
         </DialogContent>
         <DialogActions>

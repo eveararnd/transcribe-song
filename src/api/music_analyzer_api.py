@@ -1300,7 +1300,7 @@ async def delete_file(
                 if minio_client:
                     bucket_name = MINIO_CONFIG["bucket_name"]
                     object_name = file.storage_path.replace(f"{bucket_name}/", "")
-                    minio_client.remove_object(bucket_name, object_name)
+                    await asyncio.to_thread(minio_client.remove_object, bucket_name, object_name)
                     logger.info(f"Deleted from MinIO: {object_name}")
                 
                 # Also try to delete from local storage if it exists
@@ -1341,6 +1341,181 @@ async def delete_file(
         logger.error(f"Error deleting file {file_id}: {e}")
         await db.rollback()
         raise HTTPException(500, f"Failed to delete file: {str(e)}")
+
+# Batch delete endpoint
+@app.post("/api/v2/files/batch/delete")
+async def batch_delete_files(
+    file_ids: List[str] = Body(..., embed=True),
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """Delete multiple music files and all associated data"""
+    deleted_files = []
+    failed_files = []
+    
+    for file_id in file_ids:
+        try:
+            # Get the file first
+            result = await db.execute(select(MusicFile).where(MusicFile.id == file_id))
+            file = result.scalar_one_or_none()
+            
+            if not file:
+                failed_files.append({"file_id": file_id, "error": "File not found"})
+                continue
+            
+            # Delete from MinIO/storage
+            try:
+                if file.storage_path:
+                    if minio_client:
+                        bucket_name = MINIO_CONFIG["bucket_name"]
+                        object_name = file.storage_path.replace(f"{bucket_name}/", "")
+                        await asyncio.to_thread(minio_client.remove_object, bucket_name, object_name)
+                    
+                    # Also try to delete from local storage
+                    local_paths = [
+                        STORAGE_PATHS["original"] / file.storage_path,
+                        STORAGE_PATHS["converted"] / file.storage_path.replace(".mp3", ".wav"),
+                    ]
+                    for path in local_paths:
+                        if path.exists():
+                            path.unlink()
+            except Exception as e:
+                logger.warning(f"Failed to delete storage files for {file_id}: {e}")
+            
+            # Delete from FAISS index if exists
+            if faiss_manager and file.transcriptions:
+                for transcription in file.transcriptions:
+                    try:
+                        await asyncio.to_thread(faiss_manager.remove_from_index, str(transcription.id))
+                    except Exception as e:
+                        logger.warning(f"Failed to remove from FAISS: {e}")
+            
+            # Delete from database
+            await db.delete(file)
+            deleted_files.append({"file_id": file_id, "filename": file.original_filename})
+            
+        except Exception as e:
+            logger.error(f"Error deleting file {file_id}: {e}")
+            failed_files.append({"file_id": file_id, "error": str(e)})
+    
+    # Commit all deletions
+    try:
+        await db.commit()
+    except Exception as e:
+        await db.rollback()
+        raise HTTPException(500, f"Failed to commit deletions: {str(e)}")
+    
+    return {
+        "deleted": deleted_files,
+        "failed": failed_files,
+        "total_deleted": len(deleted_files),
+        "total_failed": len(failed_files)
+    }
+
+# Batch export endpoint
+@app.post("/api/v2/files/batch/export")
+async def batch_export_files(
+    request: dict = Body(...),
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """Export multiple files in a single archive"""
+    file_ids = request.get("file_ids", [])
+    format = request.get("format", "tar.gz")
+    
+    if not file_ids:
+        raise HTTPException(400, "No file IDs provided")
+    
+    # Get files from database
+    result = await db.execute(
+        select(MusicFile)
+        .where(MusicFile.id.in_(file_ids))
+        .options(selectinload(MusicFile.transcriptions), selectinload(MusicFile.lyrics))
+    )
+    files = result.scalars().all()
+    
+    if not files:
+        raise HTTPException(404, "No files found")
+    
+    # Create temporary directory for export
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        
+        for file in files:
+            # Create file directory
+            file_dir = temp_path / f"{file.id}_{file.original_filename.replace('.', '_')}"
+            file_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Export metadata
+            metadata = {
+                "id": file.id,
+                "filename": file.original_filename,
+                "artist": file.artist,
+                "title": file.title,
+                "genre": file.genre,
+                "duration": file.duration,
+                "file_size": file.file_size,
+                "created_at": file.uploaded_at.isoformat(),
+                "transcriptions": [
+                    {
+                        "id": t.id,
+                        "text": t.transcription_text,
+                        "language": t.language,
+                        "model_used": t.model_used,
+                        "confidence": t.confidence,
+                        "created_at": t.created_at.isoformat()
+                    }
+                    for t in file.transcriptions
+                ],
+                "lyrics": [
+                    {
+                        "id": l.id,
+                        "source": l.source,
+                        "text": l.lyrics_text,
+                        "language": l.language,
+                        "created_at": l.created_at.isoformat()
+                    }
+                    for l in file.lyrics
+                ]
+            }
+            
+            # Write metadata
+            with open(file_dir / "metadata.json", "w") as f:
+                json.dump(metadata, f, indent=2)
+            
+            # Copy audio file if it exists
+            if file.storage_path:
+                source_path = STORAGE_PATHS["original"] / file.storage_path
+                if source_path.exists():
+                    import shutil
+                    shutil.copy2(source_path, file_dir / file.original_filename)
+        
+        # Create archive
+        archive_name = f"music_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+        if format == "zip":
+            archive_path = temp_path / f"{archive_name}.zip"
+            import zipfile
+            with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for root, dirs, files in os.walk(temp_path):
+                    for file in files:
+                        if file != f"{archive_name}.zip":
+                            file_path = Path(root) / file
+                            arcname = file_path.relative_to(temp_path)
+                            zipf.write(file_path, arcname)
+        else:  # tar.gz
+            archive_path = temp_path / f"{archive_name}.tar.gz"
+            import tarfile
+            with tarfile.open(archive_path, "w:gz") as tar:
+                for item in temp_path.iterdir():
+                    if item.name != f"{archive_name}.tar.gz":
+                        tar.add(item, arcname=item.name)
+        
+        # Return the archive
+        return FileResponse(
+            str(archive_path),
+            media_type='application/octet-stream',
+            filename=archive_path.name
+        )
 
 # Catch-all route for React Router - must be last!
 @app.get("/{full_path:path}", response_class=HTMLResponse)

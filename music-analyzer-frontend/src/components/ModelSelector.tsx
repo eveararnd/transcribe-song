@@ -38,7 +38,7 @@ interface ModelsStatus {
 
 export const ModelSelector: React.FC = () => {
   const [modelsStatus, setModelsStatus] = useState<ModelsStatus | null>(null);
-  const [selectedModel, setSelectedModel] = useState<string>('');
+  const [selectedModel, setSelectedModel] = useState<string>('phi-4-reasoning');
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingModel, setLoadingModel] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,6 +70,17 @@ export const ModelSelector: React.FC = () => {
     const interval = setInterval(fetchModelsStatus, 5000);
     return () => clearInterval(interval);
   }, []);
+
+  // Auto-load phi-4-reasoning if not loaded
+  useEffect(() => {
+    if (modelsStatus && !modelsStatus.current_model && selectedModel === 'phi-4-reasoning') {
+      const phi4Status = modelsStatus.models['phi-4-reasoning'];
+      if (phi4Status && phi4Status.downloaded && !phi4Status.loaded && !loading) {
+        // Auto-load phi-4-reasoning
+        handleLoadModel();
+      }
+    }
+  }, [modelsStatus, selectedModel, loading]);
 
   const handleLoadModel = async () => {
     if (!selectedModel || loadingModel) return;
@@ -192,11 +203,13 @@ export const ModelSelector: React.FC = () => {
 
       <Grid container spacing={2} alignItems="center">
         <Grid item xs={12} md={6}>
-          <FormControl fullWidth>
-            <InputLabel>Select Model</InputLabel>
+          <FormControl fullWidth variant="outlined">
+            <InputLabel id="model-select-label">Select Model</InputLabel>
             <Select
+              labelId="model-select-label"
               value={selectedModel}
               onChange={(e) => setSelectedModel(e.target.value)}
+              label="Select Model"
               disabled={loading}
             >
               {availableModels.map((model) => (

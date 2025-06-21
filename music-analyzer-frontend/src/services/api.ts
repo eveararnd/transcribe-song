@@ -62,6 +62,27 @@ class ApiService {
     });
   }
 
+  async batchDeleteFiles(fileIds: string[]): Promise<any> {
+    const response = await axios.post(
+      `${API_BASE_URL}/files/batch/delete`,
+      { file_ids: fileIds },
+      { headers: this.headers }
+    );
+    return response.data;
+  }
+
+  async batchExportFiles(fileIds: string[], format: string = 'tar.gz'): Promise<Blob> {
+    const response = await axios.post(
+      `${API_BASE_URL}/files/batch/export`,
+      { file_ids: fileIds, format },
+      { 
+        headers: this.headers,
+        responseType: 'blob'
+      }
+    );
+    return response.data;
+  }
+
   // Transcription operations
   async transcribeFile(request: TranscriptionRequest): Promise<Transcription> {
     const response = await axios.post(`${API_BASE_URL}/transcribe`, request, {
