@@ -1,0 +1,41 @@
+[Unit]
+Description=Music Analyzer API
+After=network.target postgresql.service redis-server.service minio.service
+Wants=postgresql.service redis-server.service minio.service
+
+[Service]
+Type=simple
+User=davegornshtein
+Group=davegornshtein
+WorkingDirectory=/home/davegornshtein/parakeet-tdt-deployment
+
+# Python environment
+Environment="PATH=/home/davegornshtein/parakeet-env/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/davegornshtein/parakeet-tdt-deployment"
+Environment="USE_TF=0"
+
+# Load environment variables
+EnvironmentFile=/home/davegornshtein/parakeet-tdt-deployment/.env
+
+# Start command
+ExecStart=/home/davegornshtein/parakeet-env/bin/python /home/davegornshtein/parakeet-tdt-deployment/src/api/music_analyzer_api.py
+
+# Restart policy
+Restart=always
+RestartSec=10
+RestartPreventExitStatus=0
+
+# Give up restarting if it fails 5 times in 5 minutes
+StartLimitInterval=300
+StartLimitBurst=5
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=music-analyzer
+
+# Resource limits
+LimitNOFILE=65536
+
+[Install]
+WantedBy=multi-user.target

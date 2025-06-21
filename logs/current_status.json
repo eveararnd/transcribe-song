@@ -1,0 +1,45 @@
+{
+  "timestamp": "2025-06-21T16:30:56.651391",
+  "services": {
+    "postgresql": {
+      "name": "postgresql",
+      "running": true,
+      "port_open": true,
+      "critical": true,
+      "status": "OK"
+    },
+    "redis": {
+      "name": "redis",
+      "running": true,
+      "port_open": true,
+      "critical": true,
+      "status": "OK"
+    },
+    "minio": {
+      "name": "minio",
+      "running": true,
+      "port_open": true,
+      "critical": true,
+      "status": "OK"
+    },
+    "music-analyzer-api": {
+      "name": "music-analyzer-api",
+      "running": true,
+      "port_open": true,
+      "critical": true,
+      "status": "OK"
+    }
+  },
+  "disk_alerts": [],
+  "api_health": {
+    "status": "healthy",
+    "timestamp": "2025-06-21T16:30:56.718925",
+    "services": {
+      "database": true,
+      "redis": true,
+      "minio": true,
+      "asr_model": false
+    },
+    "healthy": false
+  }
+}

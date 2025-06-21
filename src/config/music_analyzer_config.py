@@ -47,8 +47,8 @@ if redis_password:
 # MinIO configuration
 MINIO_CONFIG = {
     "endpoint": "localhost:9000",
-    "access_key": os.environ.get("MINIO_ROOT_USER", "minioadmin"),
-    "secret_key": os.environ.get("MINIO_ROOT_PASSWORD", "minio123456"),
+    "access_key": "minio_admin",
+    "secret_key": "minio_secret_2025",
     "bucket_name": "music-analyzer",
     "secure": False
 }
