@@ -1,0 +1,142 @@
+#!/usr/bin/env python3
+"""
+Test export functionality for Music Analyzer
+"""
+import asyncio
+import json
+from music_analyzer_export import get_exporter
+from music_analyzer_models import DatabaseManager, MusicFile, Transcription, Lyrics
+from music_analyzer_config import DATABASE_URL
+from sqlalchemy import select
+import uuid
+
+async def test_export():
+    """Test export functionality"""
+    print("\n=== Testing Music Analyzer Export Functionality ===\n")
+    
+    # Initialize database
+    db_manager = DatabaseManager(DATABASE_URL)
+    await db_manager.initialize()
+    
+    exporter = get_exporter()
+    
+    # Get a sample music file from database
+    async for db in db_manager.get_session():
+        result = await db.execute(select(MusicFile).limit(1))
+        music_file = result.scalar_one_or_none()
+        
+        if not music_file:
+            print("No music files found in database. Creating a test file...")
+            
+            # Create a test music file
+            test_file = MusicFile(
+                id=str(uuid.uuid4()),
+                original_filename="test_song.mp3",
+                file_format="mp3",
+                duration=180.5,
+                sample_rate=44100,
+                channels=2,
+                bit_depth=16,
+                file_size=5242880,
+                file_hash="test_hash_" + str(uuid.uuid4())[:8],
+                minio_path="test/test_song.mp3",
+                metadata={
+                    "artist": "Test Artist",
+                    "album": "Test Album",
+                    "year": 2024
+                }
+            )
+            db.add(test_file)
+            
+            # Add a transcription
+            transcription = Transcription(
+                id=str(uuid.uuid4()),
+                file_id=test_file.id,
+                text="This is a test transcription of the song lyrics.",
+                language="en",
+                confidence=0.95,
+                word_timestamps=[]
+            )
+            db.add(transcription)
+            
+            # Add lyrics
+            lyrics = Lyrics(
+                id=str(uuid.uuid4()),
+                file_id=test_file.id,
+                source="genius",
+                lyrics_text="These are the test lyrics\nFor our sample song\nJust for testing export",
+                confidence=0.90,
+                language="en"
+            )
+            db.add(lyrics)
+            
+            await db.commit()
+            music_file = test_file
+            print(f"Created test file: {music_file.original_filename}")
+    
+    # Test 1: Export as JSON
+    print("\n1. Testing JSON export...")
+    try:
+        json_export = await exporter.export_music_file(str(music_file.id), 'json')
+        print(f"✓ JSON export successful")
+        print(f"  Filename: {json_export['filename']}")
+        print(f"  Content preview: {json_export['content'][:200]}...")
+    except Exception as e:
+        print(f"✗ JSON export failed: {e}")
+    
+    # Test 2: Export as CSV
+    print("\n2. Testing CSV export...")
+    try:
+        csv_export = await exporter.export_music_file(str(music_file.id), 'csv')
+        print(f"✓ CSV export successful")
+        print(f"  Filename: {csv_export['filename']}")
+        print(f"  Content type: {csv_export.get('content_type', 'N/A')}")
+        print(f"  Size: {len(csv_export['content'])} bytes")
+    except Exception as e:
+        print(f"✗ CSV export failed: {e}")
+    
+    # Test 3: Export as Excel
+    print("\n3. Testing Excel export...")
+    try:
+        xlsx_export = await exporter.export_music_file(str(music_file.id), 'xlsx')
+        print(f"✓ Excel export successful")
+        print(f"  Filename: {xlsx_export['filename']}")
+        print(f"  Content type: {xlsx_export.get('content_type', 'N/A')}")
+        print(f"  Size: {len(xlsx_export['content'])} bytes")
+    except Exception as e:
+        print(f"✗ Excel export failed: {e}")
+    
+    # Test 4: Export as ZIP
+    print("\n4. Testing ZIP export...")
+    try:
+        zip_export = await exporter.export_music_file(str(music_file.id), 'zip')
+        print(f"✓ ZIP export successful")
+        print(f"  Filename: {zip_export['filename']}")
+        print(f"  Size: {len(zip_export['content'])} bytes")
+    except Exception as e:
+        print(f"✗ ZIP export failed: {e}")
+    
+    # Test 5: Batch export
+    print("\n5. Testing batch export...")
+    try:
+        # Get multiple files or use the same file multiple times for testing
+        async for db in db_manager.get_session():
+            result = await db.execute(select(MusicFile).limit(3))
+            files = result.scalars().all()
+            file_ids = [str(f.id) for f in files]
+            
+            if len(file_ids) < 2:
+                # Use the same file multiple times for testing
+                file_ids = [str(music_file.id)] * 3
+        
+        batch_export = await exporter.export_batch(file_ids, 'json')
+        print(f"✓ Batch export successful")
+        print(f"  Filename: {batch_export['filename']}")
+        print(f"  Number of files: {len(file_ids)}")
+    except Exception as e:
+        print(f"✗ Batch export failed: {e}")
+    
+    print("\n✓ Export functionality testing complete!")
+
+if __name__ == "__main__":
+    asyncio.run(test_export())

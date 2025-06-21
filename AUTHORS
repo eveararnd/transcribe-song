@@ -1,0 +1,31 @@
+# Authors
+
+## Primary Author and Copyright Holder
+
+David Gornshtein <david@eveara.com>
+- Project Lead
+- Architecture and Design
+- Core Implementation
+
+## Company
+
+Eveara Ltd.
+- Copyright Holder
+- All Rights Reserved
+
+## Contributors
+
+Claude (Anthropic)
+- Development Assistant
+- Code Organization
+- Testing Infrastructure
+- Documentation
+
+## Acknowledgments
+
+Special thanks to:
+- NVIDIA for Parakeet ASR model
+- Microsoft for Phi-4 models
+- Google for Gemma models
+- Hugging Face for model hosting and tools
+- The open-source community for various libraries used in this project

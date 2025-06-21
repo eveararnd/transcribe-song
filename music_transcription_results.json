@@ -1,0 +1,121 @@
+{
+  "summary": {
+    "total_files": 10,
+    "files_with_text": 8,
+    "total_duration_seconds": 2269.5141875,
+    "total_processing_seconds": 13.503298044204712,
+    "average_speed_factor": 168.0711023388853
+  },
+  "results": [
+    {
+      "song": "01 Pumped up Kicks",
+      "filename": "3863698b_01_Pumped_up_Kicks.flac",
+      "duration": 191.4153125,
+      "processing_time": 0.8353524208068848,
+      "speed_factor": 229.14318284384436,
+      "text_length": 1811,
+      "word_count": 363,
+      "has_text": true,
+      "text_preview": "robert's got a quick hand he'll look around the room, he won't tell you he's been he's got a rosy red handing on his mouth, he's a cowboy kid here finally sneaks should have gone and his dad's cause i..."
+    },
+    {
+      "song": "22   Danny's Chant",
+      "filename": "4a459608_22_-_Danny's_Chant.flac",
+      "duration": 198.64,
+      "processing_time": 1.9313523769378662,
+      "speed_factor": 102.85021126747523,
+      "text_length": 0,
+      "word_count": 0,
+      "has_text": false,
+      "text_preview": "(No text detected)"
+    },
+    {
+      "song": "11 Too Close",
+      "filename": "4b6e2af2_11_Too_Close.flac",
+      "duration": 238.271875,
+      "processing_time": 2.250244617462158,
+      "speed_factor": 105.8870991851209,
+      "text_length": 1156,
+      "word_count": 256,
+      "has_text": true,
+      "text_preview": "you know i'm not one to break promises i don't want to hurt you, but i need to breathe and the end of it all, you're still my best friend but there's something inside that i need to release which way ..."
+    },
+    {
+      "song": "20   Sunny Side of Heaven",
+      "filename": "5e3ca588_20_-_Sunny_Side_of_Heaven.flac",
+      "duration": 190.6666875,
+      "processing_time": 0.5446598529815674,
+      "speed_factor": 350.0656170199727,
+      "text_length": 0,
+      "word_count": 0,
+      "has_text": false,
+      "text_preview": "(No text detected)"
+    },
+    {
+      "song": "06 Englishman in New York",
+      "filename": "61ca7551_06_Englishman_in_New_York.flac",
+      "duration": 233.039875,
+      "processing_time": 0.8921289443969727,
+      "speed_factor": 261.21770452983276,
+      "text_length": 1374,
+      "word_count": 282,
+      "has_text": true,
+      "text_preview": "don't take coffee, i take tea, my dear i like my toes down on one side you can hear it and my accent that i thought i'm an englishman in new york see me walking down fifth avenue walking caner at my s..."
+    },
+    {
+      "song": "08 Maybe Tomorrow",
+      "filename": "62dcef3b_08_Maybe_Tomorrow.flac",
+      "duration": 272.519875,
+      "processing_time": 2.337812900543213,
+      "speed_factor": 116.57043852255133,
+      "text_length": 741,
+      "word_count": 164,
+      "has_text": true,
+      "text_preview": "i've been down and i wanna rewind still a black piles key walking around with me well me waste time and i'd rather be aisle and i walk the outside by a rainbow smile with me there you'll be so maybe t..."
+    },
+    {
+      "song": "19   Child of Mine",
+      "filename": "723c141a_19_-_Child_of_Mine.flac",
+      "duration": 327.8666875,
+      "processing_time": 2.382413625717163,
+      "speed_factor": 137.61954849519648,
+      "text_length": 936,
+      "word_count": 179,
+      "has_text": true,
+      "text_preview": "little child of mine, you'll be loving like your little dawn mother did. heard it somewhere before, i wanna leave you know not like my father did. heavy country blues keep a rockin' cuckoo, keep that ..."
+    },
+    {
+      "song": "09 Lazy Song",
+      "filename": "896a2479_09_Lazy_Song.flac",
+      "duration": 234.309125,
+      "processing_time": 0.8770785331726074,
+      "speed_factor": 267.1472577859666,
+      "text_length": 1644,
+      "word_count": 343,
+      "has_text": true,
+      "text_preview": "today i don't feel like doing anything i just wanna lay in my bed don't feel like picking on my phone so leave a message at the top yesterday i swear i'm not doing anything i'm gonna put my feet up th..."
+    },
+    {
+      "song": "07 Mountain Sound",
+      "filename": "9316d3c4_07_Mountain_Sound.flac",
+      "duration": 184.160875,
+      "processing_time": 0.7168769836425781,
+      "speed_factor": 256.8932734654783,
+      "text_length": 1142,
+      "word_count": 226,
+      "has_text": true,
+      "text_preview": "i heard them charging in the distance. so i packed my things in a rude far away from all the trouble. i crossed with my two ends. along with traveled on, we're nothing but a shadow. we're playing far ..."
+    },
+    {
+      "song": "05 Don't You Worry Child",
+      "filename": "9afe16dd_05_Don't_You_Worry_Child.flac",
+      "duration": 198.623875,
+      "processing_time": 0.7353777885437012,
+      "speed_factor": 270.0977349252593,
+      "text_length": 1053,
+      "word_count": 225,
+      "has_text": true,
+      "text_preview": "there was a time i used to look into my father's eyes in a happy old i was a king, i had a golden throat those days are drawn now the memories on the wall i hear the songs from places where i was born..."
+    }
+  ]
+}

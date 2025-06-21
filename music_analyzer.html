@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Analyzer - Parakeet ASR</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding-bottom: 60px; /* Add space for footer */
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .auth-section {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        }
+
+        .auth-form {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"], input[type="password"] {
+            padding: 0.75rem;
+            border: 1px solid #444;
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .upload-zone {
+            background: #1a1a1a;
+            border: 3px dashed #444;
+            border-radius: 15px;
+            padding: 3rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone.dragover {
+            border-color: #667eea;
+            background: #1f1f2e;
+            transform: scale(1.02);
+        }
+
+        .upload-zone input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+
+        .music-catalog {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .genre-section {
+            background: #1a1a1a;
+            border-radius: 10px;
+            padding: 1.5rem;
+            border: 1px solid #333;
+        }
+
+        .genre-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #333;
+        }
+
+        .genre-title {
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+
+        .genre-count {
+            background: #2a2a2a;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .file-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .file-item {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 1rem;
+            align-items: center;
+            transition: all 0.3s;
+            border: 1px solid #333;
+        }
+
+        .file-item:hover {
+            background: #333;
+            transform: translateX(5px);
+        }
+
+        .file-info {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #e0e0e0;
+            word-break: break-word;
+        }
+
+        .file-meta {
+            font-size: 0.875rem;
+            color: #888;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            border-radius: 5px;
+            transition: all 0.2s;
+        }
+
+        .btn-transcribe {
+            background: #22c55e;
+        }
+
+        .btn-transcribe:hover {
+            background: #16a34a;
+        }
+
+        .btn-lyrics {
+            background: #3b82f6;
+        }
+
+        .btn-lyrics:hover {
+            background: #2563eb;
+        }
+
+        .transcription-result {
+            background: #0f0f0f;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .transcription-result.show {
+            display: block;
+        }
+
+        .result-header {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .result-text {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .comparison-side {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+
+        .comparison-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .progress-bar {
+            background: #2a2a2a;
+            border-radius: 10px;
+            padding: 3px;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar.show {
+            display: block;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 20px;
+            border-radius: 8px;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .status-message {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-success {
+            background: #22c55e20;
+            color: #22c55e;
+            border: 1px solid #22c55e40;
+        }
+
+        .status-error {
+            background: #ef444420;
+            color: #ef4444;
+            border: 1px solid #ef444440;
+        }
+
+        .status-info {
+            background: #3b82f620;
+            color: #3b82f6;
+            border: 1px solid #3b82f640;
+        }
+
+        .loader {
+            border: 3px solid #333;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #1a1a1a;
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #333;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.875rem;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .auth-form {
+                flex-direction: column;
+            }
+            
+            .file-item {
+                grid-template-columns: 1fr;
+            }
+            
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            body {
+                padding-bottom: 80px; /* Extra space for footer on mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎵 Music Analyzer & Transcription System</h1>
+            <p>Upload music files • Automatic organization • ASR transcription • Lyrics comparison</p>
+        </header>
+
+        <div class="auth-section">
+            <h3>Authentication Required</h3>
+            <div class="auth-form">
+                <input type="text" id="username" placeholder="Username" value="">
+                <input type="password" id="password" placeholder="Password" value="">
+                <button onclick="authenticate()">Login</button>
+                <span id="auth-status" style="margin-left: 1rem;"></span>
+            </div>
+        </div>
+
+        <div id="main-content" class="hidden">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value" id="total-files">0</div>
+                    <div class="stat-label">Total Files</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-genres">0</div>
+                    <div class="stat-label">Genres Detected</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-transcribed">0</div>
+                    <div class="stat-label">Transcribed</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="total-size">0 MB</div>
+                    <div class="stat-label">Total Size</div>
+                </div>
+            </div>
+
+            <div class="upload-zone" id="dropzone">
+                <div class="upload-icon">📁</div>
+                <h3>Drag & Drop Music Files Here</h3>
+                <p>Or click to browse • Supports all audio formats (MP3, FLAC, WAV, OGG, M4A, etc.)</p>
+                <input type="file" id="file-input" multiple accept="audio/*,video/*">
+            </div>
+
+            <div class="progress-bar" id="upload-progress">
+                <div class="progress-fill" id="progress-fill" style="width: 0%">0%</div>
+            </div>
+
+            <div class="status-message" id="status-message"></div>
+
+            <div class="music-catalog" id="music-catalog">
+                <!-- Dynamically populated -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let apiAuth = {
+            username: '',
+            password: ''
+        };
+        
+        let uploadedFiles = {};
+        let transcriptionResults = {};
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            setupDragDrop();
+            checkAuth();
+        });
+        
+        function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showStatus('Please enter credentials', 'error');
+                return;
+            }
+            
+            apiAuth.username = username;
+            apiAuth.password = password;
+            
+            // Test authentication
+            fetch('/health')
+                .then(response => {
+                    if (response.ok) {
+                        document.getElementById('auth-status').textContent = '✓ Authenticated';
+                        document.getElementById('auth-status').style.color = '#22c55e';
+                        document.getElementById('main-content').classList.remove('hidden');
+                        localStorage.setItem('api_username', username);
+                        localStorage.setItem('api_password', password);
+                        loadExistingFiles();
+                    } else {
+                        throw new Error('Authentication failed');
+                    }
+                })
+                .catch(error => {
+                    showStatus('Authentication failed', 'error');
+                });
+        }
+        
+        function checkAuth() {
+            const savedUsername = localStorage.getItem('api_username');
+            const savedPassword = localStorage.getItem('api_password');
+            
+            if (savedUsername && savedPassword) {
+                document.getElementById('username').value = savedUsername;
+                document.getElementById('password').value = savedPassword;
+                authenticate();
+            }
+        }
+        
+        function setupDragDrop() {
+            const dropzone = document.getElementById('dropzone');
+            const fileInput = document.getElementById('file-input');
+            
+            dropzone.addEventListener('click', () => fileInput.click());
+            
+            dropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropzone.classList.add('dragover');
+            });
+            
+            dropzone.addEventListener('dragleave', () => {
+                dropzone.classList.remove('dragover');
+            });
+            
+            dropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropzone.classList.remove('dragover');
+                handleFiles(e.dataTransfer.files);
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(e.target.files);
+            });
+        }
+        
+        async function handleFiles(files) {
+            const fileArray = Array.from(files);
+            showProgress(true);
+            updateProgress(0);
+            
+            let processed = 0;
+            
+            for (const file of fileArray) {
+                try {
+                    await uploadFile(file);
+                    processed++;
+                    updateProgress((processed / fileArray.length) * 100);
+                } catch (error) {
+                    console.error(`Failed to upload ${file.name}:`, error);
+                }
+            }
+            
+            showProgress(false);
+            showStatus(`Uploaded ${processed} of ${fileArray.length} files`, 'success');
+            await loadExistingFiles();
+        }
+        
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const auth = btoa(`${apiAuth.username}:${apiAuth.password}`);
+            
+            const response = await fetch('/music/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${auth}`
+                },
+                body: formData
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Upload failed: ${response.statusText}`);
+            }
+            
+            return response.json();
+        }
+        
+        async function loadExistingFiles() {
+            try {
+                const auth = btoa(`${apiAuth.username}:${apiAuth.password}`);
+                const response = await fetch('/music/catalog', {
+                    headers: {
+                        'Authorization': `Basic ${auth}`
+                    }
+                });
+                
+                if (response.ok) {
+                    const catalog = await response.json();
+                    displayCatalog(catalog);
+                    updateStats(catalog);
+                }
+            } catch (error) {
+                console.error('Failed to load catalog:', error);
+            }
+        }
+        
+        function displayCatalog(catalog) {
+            const container = document.getElementById('music-catalog');
+            container.innerHTML = '';
+            
+            // Group by genre
+            const genres = {};
+            for (const [filepath, info] of Object.entries(catalog.files || {})) {
+                const genre = info.genre || 'Unknown';
+                if (!genres[genre]) {
+                    genres[genre] = [];
+                }
+                genres[genre].push({ path: filepath, ...info });
+            }
+            
+            // Display each genre
+            for (const [genre, files] of Object.entries(genres)) {
+                const genreSection = createGenreSection(genre, files);
+                container.appendChild(genreSection);
+            }
+            
+            uploadedFiles = catalog.files || {};
+        }
+        
+        function createGenreSection(genre, files) {
+            const section = document.createElement('div');
+            section.className = 'genre-section';
+            
+            section.innerHTML = `
+                <div class="genre-header">
+                    <h3 class="genre-title">${genre}</h3>
+                    <span class="genre-count">${files.length} files</span>
+                </div>
+                <div class="file-list" id="genre-${genre}">
+                    ${files.map(file => createFileItem(file)).join('')}
+                </div>
+            `;
+            
+            return section;
+        }
+        
+        function createFileItem(file) {
+            const fileId = btoa(file.path).replace(/[^a-zA-Z0-9]/g, '');
+            return `
+                <div class="file-item" id="file-${fileId}">
+                    <div class="file-info">
+                        <div class="file-name">${file.filename}</div>
+                        <div class="file-meta">
+                            ${file.duration ? `Duration: ${formatDuration(file.duration)} • ` : ''}
+                            ${file.sample_rate ? `${file.sample_rate}Hz • ` : ''}
+                            ${file.channels ? `${file.channels}ch • ` : ''}
+                            ${file.size ? formatSize(file.size) : ''}
+                        </div>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn-small btn-transcribe" onclick="transcribeFile('${file.path}', '${fileId}')">
+                            Transcribe
+                        </button>
+                        <button class="btn-small btn-lyrics" onclick="searchLyrics('${file.filename}', '${fileId}')">
+                            Find Lyrics
+                        </button>
+                    </div>
+                    <div class="transcription-result" id="result-${fileId}"></div>
+                </div>
+            `;
+        }
+        
+        async function transcribeFile(filepath, fileId) {
+            const resultDiv = document.getElementById(`result-${fileId}`);
+            resultDiv.classList.add('show');
+            resultDiv.innerHTML = '<div class="loader"></div>';
+            
+            try {
+                const auth = btoa(`${apiAuth.username}:${apiAuth.password}`);
+                const response = await fetch('/music/transcribe', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filepath: filepath })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Transcription failed');
+                }
+                
+                const result = await response.json();
+                transcriptionResults[fileId] = result;
+                
+                displayTranscriptionResult(fileId, result);
+                updateTranscribedCount();
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status-error">Transcription failed: ${error.message}</div>`;
+            }
+        }
+        
+        function displayTranscriptionResult(fileId, result) {
+            const resultDiv = document.getElementById(`result-${fileId}`);
+            
+            resultDiv.innerHTML = `
+                <div class="result-header">Transcription Result (${result.processing_time.toFixed(2)}s)</div>
+                <div class="result-text">${result.text || '(No speech detected)'}</div>
+                ${result.lyrics ? `
+                    <div class="comparison-grid">
+                        <div class="comparison-side">
+                            <div class="comparison-title">ASR Transcription</div>
+                            <div class="result-text">${result.text || '(No speech detected)'}</div>
+                        </div>
+                        <div class="comparison-side">
+                            <div class="comparison-title">Found Lyrics</div>
+                            <div class="result-text">${result.lyrics}</div>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+        }
+        
+        async function searchLyrics(filename, fileId) {
+            const resultDiv = document.getElementById(`result-${fileId}`);
+            resultDiv.classList.add('show');
+            resultDiv.innerHTML = '<div class="loader"></div><p>Searching for lyrics...</p>';
+            
+            try {
+                const auth = btoa(`${apiAuth.username}:${apiAuth.password}`);
+                const response = await fetch('/music/search-lyrics', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${auth}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename: filename })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Lyrics search failed');
+                }
+                
+                const result = await response.json();
+                
+                if (result.lyrics) {
+                    resultDiv.innerHTML = `
+                        <div class="result-header">Found Lyrics</div>
+                        <div class="result-text">${result.lyrics}</div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = '<div class="status-info">No lyrics found</div>';
+                }
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="status-error">Lyrics search failed: ${error.message}</div>`;
+            }
+        }
+        
+        function updateStats(catalog) {
+            const files = Object.values(catalog.files || {});
+            const genres = new Set(files.map(f => f.genre || 'Unknown'));
+            const totalSize = files.reduce((sum, f) => sum + (f.size || 0), 0);
+            
+            document.getElementById('total-files').textContent = files.length;
+            document.getElementById('total-genres').textContent = genres.size;
+            document.getElementById('total-size').textContent = formatSize(totalSize);
+        }
+        
+        function updateTranscribedCount() {
+            const count = Object.keys(transcriptionResults).length;
+            document.getElementById('total-transcribed').textContent = count;
+        }
+        
+        function formatDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+        
+        function showProgress(show) {
+            const progress = document.getElementById('upload-progress');
+            progress.classList.toggle('show', show);
+        }
+        
+        function updateProgress(percent) {
+            const fill = document.getElementById('progress-fill');
+            fill.style.width = percent + '%';
+            fill.textContent = Math.round(percent) + '%';
+        }
+        
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status-message');
+            status.className = `status-message show status-${type}`;
+            status.textContent = message;
+            
+            setTimeout(() => {
+                status.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+
+    <!-- Copyright Footer -->
+    <footer style="position: fixed; bottom: 0; left: 0; right: 0; background: #2a2a2a; color: #e0e0e0; padding: 1rem 0; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.5); z-index: 1000; border-top: 1px solid #444;">
+        <div style="max-width: 1400px; margin: 0 auto; padding: 0 20px;">
+            <p style="margin: 0; font-size: 0.875rem; opacity: 0.9;">
+                &copy; 2025 David Gornshtein / Eveara Ltd. All rights reserved.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,85 @@
+# Auto detect text files and perform LF normalization
+* text=auto
+
+# Python files
+*.py text
+*.pyi text
+*.pyx text
+
+# Documentation
+*.md text
+*.txt text
+*.rst text
+LICENSE text
+README text
+
+# Configuration files
+*.json text
+*.yaml text
+*.yml text
+*.toml text
+*.ini text
+*.cfg text
+.gitignore text
+.gitattributes text
+
+# Web files
+*.html text
+*.css text
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+
+# Shell scripts
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Windows scripts
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.tar binary
+*.gz binary
+*.7z binary
+
+# Model files
+*.pt binary
+*.pth binary
+*.bin binary
+*.safetensors binary
+*.onnx binary
+*.ckpt binary
+*.h5 binary
+*.pb binary
+*.nemo binary
+*.rtlm binary
+*.litertlm binary
+
+# Audio files
+*.mp3 binary
+*.wav binary
+*.flac binary
+*.m4a binary
+*.ogg binary
+*.opus binary
+*.aac binary
+*.wma binary
+
+# Database files
+*.db binary
+*.sqlite binary
+*.sqlite3 binary
+
+# FAISS indexes
+*.faiss binary
+*.index binary

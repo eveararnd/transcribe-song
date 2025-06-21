@@ -1,0 +1,146 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+env/
+ENV/
+.venv
+
+# Models and large files
+models/
+*.nemo
+*.pt
+*.pth
+*.bin
+*.safetensors
+*.onnx
+*.ckpt
+*.h5
+*.pb
+*.tar.gz
+*.zip
+model_cache/
+huggingface_cache/
+*.litertlm
+*.rtlm
+
+# Data files
+music_library/
+music_library_v2/
+test_audio/
+*.mp3
+*.wav
+*.flac
+*.m4a
+*.ogg
+*.opus
+*.aac
+*.wma
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# MinIO data
+minio_data/
+.minio.sys/
+
+# FAISS indexes
+*.faiss
+*.index
+test_faiss_indexes/
+
+# Redis
+dump.rdb
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Build outputs
+music-analyzer-frontend/build/
+music-analyzer-frontend/dist/
+*.min.js
+*.min.css
+
+# Coverage
+coverage/
+*.coverage
+.coverage.*
+htmlcov/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test outputs
+test_outputs/
+gemma_debug.log
+*.test.log
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Files larger than 100KB (as requested)
+# We'll handle this with git hooks or manual checks
+
+# API keys and secrets
+.env.local
+.env.*.local
+secrets/
+*.key
+*.pem
+
+# Claude configuration
+claude.md
+
+# Docker
+.dockerignore
+
+# Specific large directories to ignore
+gemma-3-12b-it/
+phi-4-reasoning/
+Phi-4-multimodal-instruct/
+parakeet-tdt-0.6b-v2/
+gemma-3n-E4B/
+LiteRT-LM/
+
+gemma_pytorch/
+phi-4-multimodal-fresh/

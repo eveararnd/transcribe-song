@@ -1,0 +1,1 @@
+# Copyright © 2025 David Gornshtein @Eveara Ltd. All rights reserved.

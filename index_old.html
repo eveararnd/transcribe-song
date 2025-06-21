@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parakeet TDT API - NVIDIA Text-to-Speech</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #764ba2;
+            margin-bottom: 1rem;
+            font-size: 1.8rem;
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin: 1.5rem 0 0.5rem 0;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 1rem;
+        }
+
+        .status-online {
+            background: #10b981;
+            color: white;
+        }
+
+        .status-offline {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status-checking {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .endpoint {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .method {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: bold;
+            margin-right: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .method-get {
+            background: #10b981;
+            color: white;
+        }
+
+        .method-post {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .auth-required {
+            color: #dc2626;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
+        .auth-not-required {
+            color: #10b981;
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+        }
+
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 1rem;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 0.5rem 0;
+        }
+
+        code {
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .inline-code {
+            background: #e5e7eb;
+            padding: 0.125rem 0.25rem;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.875rem;
+        }
+
+        .demo-section {
+            background: #fef3c7;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 2px solid #fbbf24;
+            margin: 1rem 0;
+        }
+
+        .demo-section h3 {
+            color: #d97706;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 4px;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #764ba2;
+        }
+
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            min-height: 100px;
+        }
+
+        .gpu-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .stat-card {
+            background: #f3f4f6;
+            padding: 1rem;
+            border-radius: 4px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #6b7280;
+            font-size: 0.875rem;
+        }
+
+        .credentials-box {
+            background: #ddd6fe;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+        }
+
+        .warning {
+            background: #fee2e2;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #dc2626;
+            margin: 1rem 0;
+        }
+
+        .info {
+            background: #dbeafe;
+            padding: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid #3b82f6;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8rem;
+            }
+            
+            .container {
+                padding: 10px;
+                padding-bottom: 80px; /* Add space for footer */
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+        }
+        
+        /* Ensure content doesn't hide behind footer */
+        body {
+            padding-bottom: 60px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>Parakeet TDT API</h1>
+            <p>NVIDIA Text-to-Speech Model - 0.6B v2</p>
+            <p>Running on NVIDIA A100-SXM4-40GB</p>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Status Card -->
+        <div class="card">
+            <h2>API Status <span id="status-badge" class="status-badge status-checking">Checking...</span></h2>
+            <div id="health-info">
+                <p>Checking API health...</p>
+            </div>
+            <div class="gpu-stats" id="gpu-stats" style="display:none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="gpu-name">-</div>
+                    <div class="stat-label">GPU Model</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="gpu-memory">-</div>
+                    <div class="stat-label">Total Memory</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="gpu-used">-</div>
+                    <div class="stat-label">Memory Used</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="cuda-version">-</div>
+                    <div class="stat-label">CUDA Version</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- API Endpoints -->
+        <div class="card">
+            <h2>API Endpoints</h2>
+            
+            <div class="endpoint">
+                <span class="method method-get">GET</span>
+                <strong>/health</strong>
+                <span class="auth-not-required">No authentication required</span>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method method-get">GET</span>
+                <strong>/gpu/stats</strong>
+                <span class="auth-required">🔒 Authentication required</span>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method method-post">POST</span>
+                <strong>/synthesize</strong>
+                <span class="auth-required">🔒 Authentication required</span>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method method-post">POST</span>
+                <strong>/synthesize/batch</strong>
+                <span class="auth-required">🔒 Authentication required</span>
+            </div>
+            
+            <div class="endpoint">
+                <span class="method method-get">GET</span>
+                <strong>/docs</strong>
+                <span class="auth-not-required">No authentication required</span>
+                <a href="/docs" target="_blank">Open Swagger UI →</a>
+            </div>
+        </div>
+
+        <!-- Authentication -->
+        <div class="card">
+            <h2>Authentication</h2>
+            <p>The API uses HTTP Basic Authentication. Include credentials in your requests:</p>
+            
+            <div class="credentials-box">
+                <strong>Username:</strong> <span class="inline-code">parakeet</span><br>
+                <strong>Password:</strong> <span class="inline-code">Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=</span>
+            </div>
+
+            <div class="warning">
+                <strong>⚠️ Security Notice:</strong> This API uses a self-signed SSL certificate. You may need to bypass certificate warnings in your client.
+            </div>
+        </div>
+
+        <!-- Interactive Demo -->
+        <div class="card">
+            <h2>Interactive Demo</h2>
+            
+            <div class="demo-section">
+                <h3>Test Text-to-Speech Synthesis</h3>
+                <p>Enter text below to generate speech (requires authentication):</p>
+                
+                <textarea id="demo-text" rows="3" placeholder="Enter text to synthesize...">Hello! This is a test of the Parakeet text-to-speech system.</textarea>
+                
+                <div style="margin: 1rem 0;">
+                    <label>
+                        <strong>Speed:</strong>
+                        <input type="range" id="speed-slider" min="0.5" max="2" step="0.1" value="1">
+                        <span id="speed-value">1.0</span>x
+                    </label>
+                </div>
+                
+                <button id="synthesize-btn" onclick="synthesizeText()">Generate Speech</button>
+                
+                <div id="demo-result" class="result-box" style="display:none;">
+                    <p id="demo-status">Processing...</p>
+                    <audio id="demo-audio" controls style="width:100%; margin-top:1rem; display:none;"></audio>
+                </div>
+            </div>
+        </div>
+
+        <!-- Code Examples -->
+        <div class="card">
+            <h2>Code Examples</h2>
+            
+            <h3>cURL</h3>
+            <pre><code># Health check (no auth)
+curl -k https://35.232.20.248/health
+
+# Text-to-Speech (with auth)
+curl -k -X POST https://35.232.20.248/synthesize \
+  -u "parakeet:Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=" \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Hello world!"}' \
+  -o output.wav</code></pre>
+
+            <h3>Python</h3>
+            <pre><code>import requests
+from requests.auth import HTTPBasicAuth
+import urllib3
+
+# Disable SSL warnings
+urllib3.disable_warnings()
+
+# API credentials
+api_url = "https://35.232.20.248"
+auth = HTTPBasicAuth("parakeet", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")
+
+# Synthesize speech
+response = requests.post(
+    f"{api_url}/synthesize",
+    json={"text": "Hello from Python!", "speed": 1.0},
+    auth=auth,
+    verify=False  # Self-signed certificate
+)
+
+if response.status_code == 200:
+    with open("output.wav", "wb") as f:
+        f.write(response.content)
+    print("Audio saved successfully!")
+else:
+    print(f"Error: {response.status_code}")</code></pre>
+
+            <h3>JavaScript (Node.js)</h3>
+            <pre><code>const https = require('https');
+const fs = require('fs');
+
+const options = {
+  hostname: '35.232.20.248',
+  port: 443,
+  path: '/synthesize',
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': 'Basic ' + Buffer.from('parakeet:Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=').toString('base64')
+  },
+  rejectUnauthorized: false // Self-signed certificate
+};
+
+const data = JSON.stringify({
+  text: 'Hello from Node.js!',
+  speed: 1.0
+});
+
+const req = https.request(options, (res) => {
+  const chunks = [];
+  res.on('data', chunk => chunks.push(chunk));
+  res.on('end', () => {
+    fs.writeFileSync('output.wav', Buffer.concat(chunks));
+    console.log('Audio saved!');
+  });
+});
+
+req.write(data);
+req.end();</code></pre>
+        </div>
+
+        <!-- API Reference -->
+        <div class="card">
+            <h2>API Reference</h2>
+            
+            <h3>Request Parameters</h3>
+            <table style="width:100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background:#f3f4f6;">
+                        <th style="padding:0.5rem; text-align:left;">Parameter</th>
+                        <th style="padding:0.5rem; text-align:left;">Type</th>
+                        <th style="padding:0.5rem; text-align:left;">Default</th>
+                        <th style="padding:0.5rem; text-align:left;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td style="padding:0.5rem;"><code>text</code></td>
+                        <td style="padding:0.5rem;">string</td>
+                        <td style="padding:0.5rem;">required</td>
+                        <td style="padding:0.5rem;">Text to synthesize</td>
+                    </tr>
+                    <tr style="background:#f9fafb;">
+                        <td style="padding:0.5rem;"><code>speaker_id</code></td>
+                        <td style="padding:0.5rem;">integer</td>
+                        <td style="padding:0.5rem;">0</td>
+                        <td style="padding:0.5rem;">Speaker ID for multi-speaker models</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0.5rem;"><code>speed</code></td>
+                        <td style="padding:0.5rem;">float</td>
+                        <td style="padding:0.5rem;">1.0</td>
+                        <td style="padding:0.5rem;">Speech speed multiplier (0.5-2.0)</td>
+                    </tr>
+                    <tr style="background:#f9fafb;">
+                        <td style="padding:0.5rem;"><code>sample_rate</code></td>
+                        <td style="padding:0.5rem;">integer</td>
+                        <td style="padding:0.5rem;">22050</td>
+                        <td style="padding:0.5rem;">Output sample rate in Hz</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0.5rem;"><code>format</code></td>
+                        <td style="padding:0.5rem;">string</td>
+                        <td style="padding:0.5rem;">"wav"</td>
+                        <td style="padding:0.5rem;">Output format: wav, mp3, flac</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h3>Response</h3>
+            <p>The <code>/synthesize</code> endpoint returns binary audio data with appropriate content-type header.</p>
+            <p>Response headers include:</p>
+            <ul>
+                <li><code>Content-Type: audio/wav</code> (or appropriate format)</li>
+                <li><code>X-Processing-Time</code>: Time taken to generate audio</li>
+                <li><code>X-Audio-Length</code>: Duration of generated audio in seconds</li>
+            </ul>
+        </div>
+
+        <!-- System Information -->
+        <div class="card">
+            <h2>System Information</h2>
+            <div class="info">
+                <strong>Instance:</strong> instance-20250620-105816<br>
+                <strong>Zone:</strong> us-central1-c<br>
+                <strong>External IP:</strong> 35.232.20.248<br>
+                <strong>GPU:</strong> NVIDIA A100-SXM4-40GB (39.4 GB)<br>
+                <strong>CUDA:</strong> 12.4<br>
+                <strong>PyTorch:</strong> 2.6.0+cu124<br>
+                <strong>NeMo:</strong> 2.3.1<br>
+                <strong>Model:</strong> Parakeet TDT 0.6B v2
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check API health on load
+        window.addEventListener('load', checkHealth);
+
+        // Update speed value display
+        document.getElementById('speed-slider').addEventListener('input', function(e) {
+            document.getElementById('speed-value').textContent = e.target.value;
+        });
+
+        async function checkHealth() {
+            const statusBadge = document.getElementById('status-badge');
+            const healthInfo = document.getElementById('health-info');
+            
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                
+                if (response.ok && data.status === 'healthy') {
+                    statusBadge.className = 'status-badge status-online';
+                    statusBadge.textContent = 'Online';
+                    
+                    healthInfo.innerHTML = `
+                        <p><strong>✓ API is operational</strong></p>
+                        <p>Model loaded: ${data.model_loaded ? 'Yes' : 'No'}</p>
+                        <p>Python: ${data.python_version} | PyTorch: ${data.torch_version}</p>
+                    `;
+                    
+                    // Update GPU stats
+                    if (data.gpu_name) {
+                        document.getElementById('gpu-stats').style.display = 'grid';
+                        document.getElementById('gpu-name').textContent = data.gpu_name.split('-')[0];
+                        document.getElementById('gpu-memory').textContent = `${data.gpu_memory_total.toFixed(1)} GB`;
+                        document.getElementById('gpu-used').textContent = `${data.gpu_memory_used.toFixed(1)} GB`;
+                        document.getElementById('cuda-version').textContent = data.cuda_version;
+                    }
+                } else {
+                    throw new Error('API unhealthy');
+                }
+            } catch (error) {
+                statusBadge.className = 'status-badge status-offline';
+                statusBadge.textContent = 'Offline';
+                healthInfo.innerHTML = '<p><strong>✗ API is not responding</strong></p>';
+            }
+        }
+
+        async function synthesizeText() {
+            const text = document.getElementById('demo-text').value;
+            const speed = document.getElementById('speed-slider').value;
+            const button = document.getElementById('synthesize-btn');
+            const resultBox = document.getElementById('demo-result');
+            const status = document.getElementById('demo-status');
+            const audio = document.getElementById('demo-audio');
+            
+            if (!text.trim()) {
+                alert('Please enter some text to synthesize');
+                return;
+            }
+            
+            button.disabled = true;
+            button.textContent = 'Processing...';
+            resultBox.style.display = 'block';
+            audio.style.display = 'none';
+            status.textContent = 'Sending request to API...';
+            
+            try {
+                const auth = btoa('parakeet:Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=');
+                const response = await fetch('/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Basic ${auth}`
+                    },
+                    body: JSON.stringify({
+                        text: text,
+                        speed: parseFloat(speed)
+                    })
+                });
+                
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = URL.createObjectURL(blob);
+                    
+                    audio.src = url;
+                    audio.style.display = 'block';
+                    status.textContent = `✓ Audio generated successfully! Processing time: ${response.headers.get('X-Processing-Time') || 'N/A'}`;
+                } else {
+                    const error = await response.text();
+                    throw new Error(`API error: ${response.status} - ${error}`);
+                }
+            } catch (error) {
+                status.textContent = `✗ Error: ${error.message}`;
+                console.error('Synthesis error:', error);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Generate Speech';
+            }
+        }
+
+        // Refresh health status every 30 seconds
+        setInterval(checkHealth, 30000);
+    </script>
+
+    <!-- Copyright Footer -->
+    <footer style="position: fixed; bottom: 0; left: 0; right: 0; background: #1a1a1a; color: #e0e0e0; padding: 1rem 0; text-align: center; box-shadow: 0 -2px 10px rgba(0,0,0,0.3); z-index: 1000;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+            <p style="margin: 0; font-size: 0.875rem;">
+                &copy; 2025 David Gornshtein / Eveara Ltd. All rights reserved.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>
