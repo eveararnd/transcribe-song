@@ -231,6 +231,17 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Add CORS middleware for external access
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["https://35.232.20.248", "http://localhost:3000"],  # Add your frontend URLs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Mount static files
 static_path = Path(__file__).parent.parent.parent / "music-analyzer-frontend" / "build"
 if static_path.exists():
