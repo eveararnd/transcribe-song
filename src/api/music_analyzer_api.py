@@ -18,6 +18,7 @@ import time
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, Query, Body, Request
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, FileResponse
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
+from fastapi.staticfiles import StaticFiles
 from starlette.status import HTTP_401_UNAUTHORIZED
 import uvicorn
 from pydantic import BaseModel
@@ -230,6 +231,20 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+# Mount static files
+static_path = Path(__file__).parent.parent.parent / "music-analyzer-frontend" / "build"
+if static_path.exists():
+    app.mount("/assets", StaticFiles(directory=str(static_path / "assets")), name="assets")
+    
+    @app.get("/", response_class=HTMLResponse)
+    async def serve_frontend():
+        """Serve the React frontend"""
+        index_file = static_path / "index.html"
+        if index_file.exists():
+            return FileResponse(str(index_file))
+        else:
+            return HTMLResponse("<h1>Frontend not built. Run 'npm run build' in music-analyzer-frontend directory.</h1>")
+
 # Utility functions
 def get_file_hash(file_content: bytes) -> str:
     """Calculate SHA256 hash of file content"""
@@ -281,9 +296,9 @@ def get_audio_metadata(file_path: Path) -> Dict[str, Any]:
     return {'duration': 0, 'sample_rate': 0, 'channels': 0, 'codec': 'unknown'}
 
 # API Endpoints
-@app.get("/")
-async def root():
-    """Root endpoint - returns API information"""
+@app.get("/api")
+async def api_root():
+    """API root endpoint - returns API information"""
     return {
         "name": "Music Analyzer V2 API",
         "version": "2.0.0",
@@ -1080,6 +1095,21 @@ async def export_search_history(
         raise HTTPException(404, str(e))
     except Exception as e:
         raise HTTPException(500, f"Export failed: {str(e)}")
+
+# Catch-all route for React Router - must be last!
+@app.get("/{full_path:path}", response_class=HTMLResponse)
+async def serve_spa(full_path: str):
+    """Serve the React app for any non-API route"""
+    # Don't catch API routes
+    if full_path.startswith("api/"):
+        raise HTTPException(404, "API endpoint not found")
+    
+    static_path = Path(__file__).parent.parent.parent / "music-analyzer-frontend" / "build"
+    index_file = static_path / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    else:
+        raise HTTPException(404, "Frontend not found")
 
 # Run the application
 if __name__ == "__main__":

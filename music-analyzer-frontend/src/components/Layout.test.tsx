@@ -124,7 +124,9 @@ describe('Layout Component', () => {
     renderWithProviders(<Layout />);
 
     const logoutButton = screen.getByTestId('LogoutIcon').closest('button');
-    fireEvent.click(logoutButton);
+    if (logoutButton) {
+      fireEvent.click(logoutButton);
+    }
 
     await waitFor(() => {
       expect(screen.getByText('Login to Music Analyzer')).toBeInTheDocument();

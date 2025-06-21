@@ -183,7 +183,7 @@ export const ModelSelector: React.FC = () => {
             />
             {modelsStatus.models[modelsStatus.current_model]?.gpu_memory_mb && (
               <Typography variant="caption" color="text.secondary" sx={{ ml: 2 }}>
-                GPU Memory: {Math.round(modelsStatus.models[modelsStatus.current_model].gpu_memory_mb)} MB
+                GPU Memory: {Math.round(modelsStatus.models[modelsStatus.current_model].gpu_memory_mb || 0)} MB
               </Typography>
             )}
           </Box>
