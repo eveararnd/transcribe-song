@@ -1107,6 +1107,104 @@ async def export_search_history(
     except Exception as e:
         raise HTTPException(500, f"Export failed: {str(e)}")
 
+# File listing endpoint
+@app.get("/api/v2/files")
+async def list_files(
+    limit: int = Query(50, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """List uploaded files with pagination"""
+    # Auth already verified by Depends
+    
+    try:
+        # Count total files
+        count_query = select(func.count(MusicFile.id))
+        total_result = await db.execute(count_query)
+        total = total_result.scalar()
+        
+        # Get files with pagination - eager load relationships
+        from sqlalchemy.orm import selectinload
+        query = (
+            select(MusicFile)
+            .options(selectinload(MusicFile.transcriptions))
+            .offset(offset)
+            .limit(limit)
+            .order_by(MusicFile.uploaded_at.desc())
+        )
+        result = await db.execute(query)
+        files = result.scalars().all()
+        
+        return {
+            "files": [
+                {
+                    "id": str(file.id),
+                    "filename": file.original_filename,
+                    "artist": file.file_metadata.get("artist", "Unknown") if file.file_metadata else "Unknown",
+                    "title": file.file_metadata.get("title", file.original_filename) if file.file_metadata else file.original_filename,
+                    "genre": file.genre or "Unknown",
+                    "duration": file.duration,
+                    "file_size": file.file_size,
+                    "transcribed": len(file.transcriptions) > 0 if file.transcriptions else False,
+                    "created_at": file.uploaded_at.isoformat() if file.uploaded_at else None
+                }
+                for file in files
+            ],
+            "total": total,
+            "limit": limit,
+            "offset": offset
+        }
+    except Exception as e:
+        logger.error(f"Error listing files: {e}")
+        raise HTTPException(500, f"Failed to list files: {str(e)}")
+
+# Storage statistics endpoint
+@app.get("/api/v2/storage/stats")
+async def get_storage_stats(
+    db: AsyncSession = Depends(db_manager.get_session),
+    credentials: HTTPBasicCredentials = Depends(verify_credentials)
+):
+    """Get storage statistics"""
+    # Auth already verified by Depends
+    
+    try:
+        # Get file count and total size
+        stats_query = select(
+            func.count(MusicFile.id).label('total_files'),
+            func.sum(MusicFile.file_size).label('total_size')
+        )
+        result = await db.execute(stats_query)
+        stats = result.first()
+        
+        # Get genre distribution
+        genre_query = select(
+            MusicFile.genre,
+            func.count(MusicFile.id).label('count')
+        ).group_by(MusicFile.genre)
+        genre_result = await db.execute(genre_query)
+        genres = {row.genre or 'unknown': row.count for row in genre_result}
+        
+        # Get transcription stats
+        transcribed_query = select(func.count(func.distinct(Transcription.file_id)))
+        transcribed_result = await db.execute(transcribed_query)
+        transcribed_count = transcribed_result.scalar()
+        
+        return {
+            "total_files": stats.total_files or 0,
+            "total_size": stats.total_size or 0,
+            "total_size_mb": round((stats.total_size or 0) / (1024 * 1024), 2),
+            "transcribed_files": transcribed_count or 0,
+            "genre_distribution": genres,
+            "storage_usage": {
+                "used_mb": round((stats.total_size or 0) / (1024 * 1024), 2),
+                "limit_mb": 10000  # 10GB limit
+            }
+        }
+    except Exception as e:
+        logger.error(f"Error getting storage stats: {e}")
+        raise HTTPException(500, f"Failed to get storage stats: {str(e)}")
+
 # Catch-all route for React Router - must be last!
 @app.get("/{full_path:path}", response_class=HTMLResponse)
 async def serve_spa(full_path: str):

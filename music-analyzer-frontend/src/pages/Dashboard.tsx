@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import api from '../services/api';
 import { MusicFile, StorageStats } from '../types';
 import { ModelSelector } from '../components/ModelSelector';
+import { parseDate } from '../utils/dateUtils';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -166,7 +167,7 @@ const Dashboard: React.FC = () => {
                 <TableCell>{formatBytes(file.file_size)}</TableCell>
                 <TableCell>{file.genre || '-'}</TableCell>
                 <TableCell>
-                  {format(new Date(file.uploaded_at), 'MMM dd, yyyy')}
+                  {format(parseDate(file.uploaded_at), 'MMM dd, yyyy')}
                 </TableCell>
                 <TableCell>
                   <IconButton

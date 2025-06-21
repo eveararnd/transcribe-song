@@ -29,6 +29,7 @@ import {
 import { format } from 'date-fns';
 import api from '../services/api';
 import { MusicFile, Transcription, Lyrics, ExportFormat } from '../types';
+import { parseDate } from '../utils/dateUtils';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -152,7 +153,7 @@ const FileDetails: React.FC = () => {
         <Box flex={1}>
           <Typography variant="h4">{file.original_filename}</Typography>
           <Typography variant="body2" color="textSecondary">
-            Uploaded {format(new Date(file.uploaded_at), 'PPpp')}
+            Uploaded {format(parseDate(file.uploaded_at), 'PPpp')}
           </Typography>
         </Box>
         <Button
@@ -273,7 +274,7 @@ const FileDetails: React.FC = () => {
                     />
                   </Box>
                   <Typography variant="caption" color="textSecondary">
-                    {format(new Date(transcription.created_at), 'PPp')}
+                    {format(parseDate(transcription.created_at), 'PPp')}
                   </Typography>
                 </Box>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
@@ -302,7 +303,7 @@ const FileDetails: React.FC = () => {
                     />
                   </Box>
                   <Typography variant="caption" color="textSecondary">
-                    {format(new Date(lyric.created_at), 'PPp')}
+                    {format(parseDate(lyric.created_at), 'PPp')}
                   </Typography>
                 </Box>
                 <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>

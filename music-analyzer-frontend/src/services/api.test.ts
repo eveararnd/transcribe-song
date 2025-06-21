@@ -54,7 +54,14 @@ describe('API Service', () => {
         { id: '1', original_filename: 'file1.mp3' },
         { id: '2', original_filename: 'file2.mp3' }
       ];
-      mockedAxios.get = vi.fn().mockResolvedValueOnce({ data: mockFiles });
+      mockedAxios.get = vi.fn().mockResolvedValueOnce({ 
+        data: { 
+          files: mockFiles,
+          total: 2,
+          limit: 100,
+          offset: 0
+        } 
+      });
 
       const result = await api.getFiles();
 
@@ -68,7 +75,14 @@ describe('API Service', () => {
     });
 
     test('fetches files with custom parameters', async () => {
-      mockedAxios.get = vi.fn().mockResolvedValueOnce({ data: [] });
+      mockedAxios.get = vi.fn().mockResolvedValueOnce({ 
+        data: { 
+          files: [],
+          total: 0,
+          limit: 50,
+          offset: 10
+        } 
+      });
 
       await api.getFiles(50, 10);
 
@@ -217,7 +231,9 @@ describe('API Service', () => {
 
   describe('authentication', () => {
     test('includes auth header when credentials are present', async () => {
-      mockedAxios.get = vi.fn().mockResolvedValueOnce({ data: [] });
+      mockedAxios.get = vi.fn().mockResolvedValueOnce({ 
+        data: { files: [], total: 0, limit: 100, offset: 0 } 
+      });
 
       await api.getFiles();
 
@@ -233,7 +249,9 @@ describe('API Service', () => {
 
     test('sends empty auth header when no credentials', async () => {
       sessionStorage.clear();
-      mockedAxios.get = vi.fn().mockResolvedValueOnce({ data: [] });
+      mockedAxios.get = vi.fn().mockResolvedValueOnce({ 
+        data: { files: [], total: 0, limit: 100, offset: 0 } 
+      });
 
       await api.getFiles();
 

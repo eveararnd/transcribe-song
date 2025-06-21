@@ -38,7 +38,7 @@ class ApiService {
       params: { limit, offset },
       headers: this.headers,
     });
-    return response.data;
+    return response.data.files;
   }
 
   async getFile(fileId: string): Promise<MusicFile> {
