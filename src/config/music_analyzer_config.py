@@ -25,9 +25,9 @@ for path in STORAGE_PATHS.values():
 DATABASE_CONFIG = {
     "host": "localhost",
     "port": 5432,
-    "database": "music_analyzer",
-    "user": "music_user",
-    "password": "music_analyzer_2025"
+    "database": os.environ.get("POSTGRES_DB", "music_analyzer"),
+    "user": os.environ.get("POSTGRES_USER", "parakeet"),
+    "password": os.environ.get("POSTGRES_PASSWORD", "parakeetdb123")
 }
 
 DATABASE_URL = f"postgresql+asyncpg://{DATABASE_CONFIG['user']}:{DATABASE_CONFIG['password']}@{DATABASE_CONFIG['host']}:{DATABASE_CONFIG['port']}/{DATABASE_CONFIG['database']}"
@@ -39,12 +39,16 @@ REDIS_CONFIG = {
     "db": 0,
     "decode_responses": True
 }
+# Add password only if Redis is configured with one
+redis_password = os.environ.get("REDIS_PASSWORD")
+if redis_password:
+    REDIS_CONFIG["password"] = redis_password
 
 # MinIO configuration
 MINIO_CONFIG = {
     "endpoint": "localhost:9000",
-    "access_key": "minio_admin",
-    "secret_key": "minio_secret_2025",
+    "access_key": os.environ.get("MINIO_ROOT_USER", "minioadmin"),
+    "secret_key": os.environ.get("MINIO_ROOT_PASSWORD", "minio123456"),
     "bucket_name": "music-analyzer",
     "secure": False
 }

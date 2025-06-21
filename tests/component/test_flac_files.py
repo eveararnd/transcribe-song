@@ -9,14 +9,19 @@ import time
 from pathlib import Path
 from typing import List, Dict, Optional
 import urllib3
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configuration
-BASE_URL = "https://35.232.20.248"
-USERNAME = "parakeet"
-PASSWORD = "Q7+vD#8kN$2pL@9"  # nginx password
+BASE_URL = os.getenv("TEST_API_URL", "https://35.232.20.248")
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")  # nginx password
 
 # Test files
 TEST_FILES = [

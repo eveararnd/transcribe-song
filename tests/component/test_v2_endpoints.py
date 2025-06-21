@@ -7,11 +7,15 @@ import requests
 import os
 import json
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Configuration
-BASE_URL = "https://35.232.20.248"
-USERNAME = "parakeet"
-PASSWORD = "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI="  # Use the FastAPI password
+BASE_URL = os.getenv("TEST_API_URL", "https://35.232.20.248")
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")  # Use the FastAPI password
 
 # Disable SSL warnings for self-signed certificate
 import urllib3

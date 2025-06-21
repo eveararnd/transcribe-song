@@ -6,6 +6,11 @@ Test API locally without nginx
 import requests
 import urllib3
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Disable SSL warnings
 urllib3.disable_warnings()
@@ -17,9 +22,9 @@ test_files = [
 ]
 
 # Direct API endpoint
-API_URL = "http://localhost:8000"
-USERNAME = "parakeet"
-PASSWORD = "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI="
+API_URL = os.getenv("TEST_API_URL", "http://localhost:8000")
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")
 
 print("Testing API directly on localhost:8000\n")
 

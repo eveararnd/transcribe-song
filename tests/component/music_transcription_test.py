@@ -9,11 +9,15 @@ import time
 from pathlib import Path
 from typing import Dict, List
 import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Configuration
-API_URL = "http://localhost:8000"
-USERNAME = "parakeet"
-PASSWORD = "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI="
+API_URL = os.getenv("TEST_API_URL", "http://localhost:8000")
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")
 
 # Get all FLAC files
 flac_dir = Path("/home/davegornshtein/parakeet-tdt-deployment/music_library/other")

@@ -3,6 +3,12 @@
 """
 Unit tests for Music Analyzer API with 90%+ coverage
 """
+import os
+# Disable TensorFlow completely
+os.environ['USE_TF'] = '0'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
 import pytest
 import asyncio
 from unittest.mock import Mock, AsyncMock, patch, MagicMock
@@ -12,6 +18,11 @@ import uuid
 import hashlib
 from pathlib import Path
 import tempfile
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Import modules to test
 # Try to import modules, but don't fail if they're not available
@@ -49,7 +60,10 @@ class TestAuthentication:
         """Test successful authentication"""
         from fastapi.security import HTTPBasicCredentials
         
-        credentials = HTTPBasicCredentials(username="parakeet", password="Q7+vD#8kN$2pL@9")
+        credentials = HTTPBasicCredentials(
+            username=os.getenv("API_USERNAME", "parakeet"),
+            password=os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+        )
         # Should not raise an exception
         verify_credentials(credentials)
     
@@ -212,57 +226,41 @@ class TestAPIEndpoints:
         if not MODULES_AVAILABLE:
             pytest.skip("Music analyzer modules not available")
         
-        # Since this test requires many external dependencies (database, minio, etc.),
-        # we'll create a comprehensive mock setup
-        with patch('src.api.music_analyzer_api.db_manager') as mock_db_manager:
-            with patch('src.api.music_analyzer_api.get_audio_metadata') as mock_metadata:
-                with patch('src.api.music_analyzer_api.minio_client') as mock_minio:
-                    with patch('aiofiles.open') as mock_aiofiles:
-                        # Mock database session
-                        mock_session = AsyncMock()
-                        mock_session.execute = AsyncMock()
-                        mock_session.execute.return_value.scalar_one_or_none = AsyncMock(return_value=None)
-                        mock_session.add = MagicMock()
-                        mock_session.commit = AsyncMock()
-                        mock_session.refresh = AsyncMock()
-                        
-                        # Configure mock_db_manager
-                        mock_db_manager.get_session.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-                        mock_db_manager.get_session.return_value.__aexit__ = AsyncMock(return_value=None)
-                        
-                        # Mock metadata extraction
-                        mock_metadata.return_value = {
-                            'duration': 180.0,
-                            'sample_rate': 44100,
-                            'channels': 2,
-                            'codec': 'MP3',
-                            'bit_depth': 16
-                        }
-                        
-                        # Mock MinIO client
-                        mock_minio.fput_object = MagicMock()
-                        
-                        # Mock file operations
-                        mock_file = AsyncMock()
-                        mock_file.write = AsyncMock()
-                        mock_aiofiles.return_value.__aenter__ = AsyncMock(return_value=mock_file)
-                        mock_aiofiles.return_value.__aexit__ = AsyncMock(return_value=None)
-                        
-                        # Create test file
-                        files = {'file': ('test.mp3', b'fake audio content', 'audio/mpeg')}
-                        
-                        response = client.post(
-                            "/api/v2/upload",
-                            files=files,
-                            auth=("parakeet", "Q7+vD#8kN$2pL@9")
-                        )
-                        
-                        # Should succeed with mocked dependencies
-                        assert response.status_code == 200
-                        data = response.json()
-                        assert "file_id" in data
-                        assert data["filename"] == "test.mp3"
-                        assert data["duration"] == 180.0
+        # Create a simple test file with unique content
+        import time
+        unique_content = f'fake audio content for testing {time.time()}'.encode()
+        files = {'file': ('test_upload.mp3', unique_content, 'audio/mpeg')}
+        
+        response = client.post(
+            "/api/v2/upload",
+            files=files,
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
+        )
+        
+        # The upload should succeed with real database and services
+        if response.status_code != 200:
+            print(f"Response status: {response.status_code}")
+            print(f"Response body: {response.text}")
+        assert response.status_code == 200
+        data = response.json()
+        assert "file_id" in data
+        assert data["filename"] == "test_upload.mp3"
+        
+        # Clean up - delete the uploaded file from database
+        if "file_id" in data:
+            # Delete the file to keep tests idempotent
+            delete_response = client.delete(
+                f"/api/v2/files/{data['file_id']}",
+                auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
+            )
+            # Delete might return 200 or 204
+            assert delete_response.status_code in [200, 204, 404]
     
     def test_get_files_endpoint(self, client):
         """Test files listing endpoint"""
@@ -282,7 +280,10 @@ class TestAPIEndpoints:
         response = client.post(
             "/api/v2/transcribe",
             json=request_data,
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         # Transcription might fail if services aren't running
@@ -297,7 +298,10 @@ class TestAPIEndpoints:
         response = client.post(
             "/api/v2/search-lyrics",
             json=request_data,
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         # Lyrics search might fail if services aren't running
@@ -373,7 +377,10 @@ class TestSearchFunctionality:
         response = client.post(
             "/api/v2/search/similar",
             json=request_data,
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         # Search might fail if services aren't running or due to validation errors
@@ -393,7 +400,10 @@ class TestErrorHandling:
         response = client.post(
             "/api/v2/upload",
             files=files,
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         # Should reject invalid file format
@@ -406,7 +416,10 @@ class TestErrorHandling:
         
         response = client.get(
             "/api/v2/files/non-existent-id",
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         assert response.status_code == 404
@@ -420,7 +433,10 @@ class TestErrorHandling:
         response = client.post(
             "/api/v2/transcribe",
             json=request_data,
-            auth=("parakeet", "Q7+vD#8kN$2pL@9")
+            auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
         )
         
         # Transcription might fail for various reasons
@@ -445,7 +461,10 @@ class TestConcurrency:
                     client.post,
                     "/api/v2/upload",
                     files=files,
-                    auth=("parakeet", "Q7+vD#8kN$2pL@9")
+                    auth=(
+                os.getenv("API_USERNAME", "parakeet"),
+                os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
+            )
                 )
             )
             tasks.append(task)

@@ -7,14 +7,18 @@ import requests
 import os
 from pathlib import Path
 import urllib3
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Disable SSL warnings
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Configuration
-BASE_URL = "https://35.232.20.248"
-USERNAME = "parakeet"
-PASSWORD = "Q7+vD#8kN$2pL@9"
+BASE_URL = os.getenv("TEST_API_URL", "https://35.232.20.248")
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+vD#8kN$2pL@9")
 
 # Test one FLAC file
 test_file = "/home/davegornshtein/parakeet-tdt-deployment/music_library/other/9afe16dd_05_Don't_You_Worry_Child.flac"

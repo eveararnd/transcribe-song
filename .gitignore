@@ -122,8 +122,13 @@ temp/
 # We'll handle this with git hooks or manual checks
 
 # API keys and secrets
+.env
+.env.*
 .env.local
 .env.*.local
+.env.test
+.env.staging
+.env.production
 secrets/
 *.key
 *.pem

@@ -6,11 +6,16 @@ Test Music Analyzer with existing catalog files
 import requests
 import json
 from pathlib import Path
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Configuration
-BASE_URL = "http://localhost:8000"
-USERNAME = "parakeet"
-PASSWORD = "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI="
+BASE_URL = "http://localhost:8000"  # Always use local API
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")
 
 def test_existing_files():
     """Test transcription and search with existing catalog files"""
@@ -22,7 +27,7 @@ def test_existing_files():
     
     # 1. Get catalog
     print("\n1️⃣ Getting existing catalog...")
-    response = session.get(f"{BASE_URL}/music/catalog")
+    response = session.get(f"{BASE_URL}/api/v2/catalog")
     
     if response.status_code == 200:
         catalog = response.json()

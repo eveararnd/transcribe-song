@@ -11,14 +11,18 @@ import time
 from pathlib import Path
 import os
 import sys
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(".env.test")
 
 # Add parent directory to path
 sys.path.append(str(Path(__file__).parent))
 
 # Configuration
-BASE_URL = "http://localhost:8000"  # Main Parakeet API with V2 endpoints
-USERNAME = "parakeet"
-PASSWORD = "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI="
+BASE_URL = os.getenv("TEST_API_URL", "http://localhost:8000")  # Main Parakeet API with V2 endpoints
+USERNAME = os.getenv("API_USERNAME", "parakeet")
+PASSWORD = os.getenv("API_PASSWORD", "Q7+sKsoPWJH5vuulfY+RuQSmUyZj3jBa09Ql5om32hI=")
 
 class MusicAnalyzerTester:
     def __init__(self):
